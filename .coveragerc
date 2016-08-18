@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = rock
+
+[report]
+ignore_errors = True
