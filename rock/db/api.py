@@ -20,32 +20,47 @@ from oslo_config import cfg
 from oslo_db import api as db_api
 from oslo_utils import timeutils
 
-
 _BACKEND_MAPPING = {'sqlalchemy': 'rock.db.sqlalchemy.api'}
-IMPL = db_api.DBAPI.from_config(cfg.CONF,
+_IMPL = db_api.DBAPI.from_config(cfg.CONF,
                                 backend_mapping=_BACKEND_MAPPING,
                                 lazy=True)
 
 
 def get_instance():
     """Return a DB API instance."""
-    return IMPL
+    return _IMPL
 
 
-def get_last_n_records(model, n, sort_key=None):
-    return IMPL.get_last_n_records(model, n, sort_key=sort_key)
+def get_last_n_records(model, n, sort_key='id', sort_dir='desc'):
+    """Get the last n records of a table.
+
+    :param model: Model class.
+    :param sort_key: Used to sort the result.
+    :param sort_dir: 'asc' or 'desc'.
+    """
+    return _IMPL.get_last_n_records(model, n,
+                                    sort_key=sort_key,
+                                    sort_dir=sort_dir)
 
 
-def get_period_records(model, start_time, end_time=timeutils.utcnow(),
-        sort_key='id', sort_dir='asc'):
-    return IMPL.get_period_records(model, start_time, end_time=end_time,
-            sort_key=sort_key, sort_dir=sort_dir)
+def get_period_records(model,
+                       start_time,
+                       end_time=timeutils.utcnow(),
+                       sort_key='id',
+                       sort_dir='desc'):
+    """Get records create_at between start_time and end_time."""
+    return _IMPL.get_period_records(model,
+                                    start_time,
+                                    end_time=end_time,
+                                    sort_key=sort_key,
+                                    sort_dir=sort_dir)
 
 
 def save(model_obj):
-    IMPL.save(model_obj)
+    """Save one model object at a time"""
+    _IMPL.save(model_obj)
 
 
 def save_all(model_objs):
-    IMPL.save_all(model_objs)
-
+    """Save man model objects at a time"""
+    _IMPL.save_all(model_objs)
