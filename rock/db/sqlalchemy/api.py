@@ -111,7 +111,7 @@ class Connection(object):
 
     def save(self, model_obj, session=get_session()):
         try:
-            model_obj.save()
+            model_obj.save(session=session)
         except Exception:
             raise
 
