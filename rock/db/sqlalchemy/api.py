@@ -21,7 +21,7 @@ from oslo_db.sqlalchemy import session as db_session
 from oslo_utils import timeutils
 from sqlalchemy import desc
 
-
+from rock.db.sqlalchemy.model_base import ModelBase
 
 CONF = cfg.CONF
 
@@ -73,13 +73,14 @@ class Connection(object):
         query = query.limit(n)
         if sort_dir == 'desc':
             try:
-                result = query.order_by(desc(sort_key)).all()
+                result = query.all()
                 return result
             except Exception:
                 raise
         else:
             try:
-                result = query.order_by(sort_key).all()
+                result = query.from_self().\
+                         order_by(getattr(model, sort_key)).all()
                 return result
             except Exception:
                 raise
@@ -95,26 +96,29 @@ class Connection(object):
                              model.create_at <= end_time)
         if sort_dir == 'desc':
             try:
-                result = query.order_by(desc(sort_key)).all()
+                result = query.from_self().\
+                         order_by(desc(getattr(model, sort_key))).all()
                 return result
             except Exception:
                 raise
         else:
             try:
-                result = query.order_by(sort_key).all()
+                result = query.from_self().\
+                         order_by(getattr(model, sort_key)).all()
                 return result
             except Exception:
                 raise
 
-    def save(self, model_obj):
+    def save(self, model_obj, session=get_session()):
         try:
             model_obj.save()
         except Exception:
             raise
 
-    def save_all(self, model_objs):
-        for obj in model_objs:
-            try:
-                obj.save()
-            except Exception:
-                raise
+    @staticmethod
+    def save_all(model_objs, session=get_session()):
+        try:
+            ModelBase.save_all(model_objs, session=session)
+        except Exception:
+            raise
+

@@ -62,5 +62,6 @@ def save(model_obj):
 
 
 def save_all(model_objs):
-    """Save man model objects at a time"""
+    """Save many model objects at a time"""
     _IMPL.save_all(model_objs)
+

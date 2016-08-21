@@ -17,7 +17,7 @@ from sqlalchemy import Column
 from sqlalchemy import Float
 from sqlalchemy.ext.declarative import declarative_base
 
-from .model_base import ModelBase
+from rock.db.sqlalchemy.model_base import ModelBase
 
 
 Base = declarative_base()

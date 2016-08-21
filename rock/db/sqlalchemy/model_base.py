@@ -33,9 +33,11 @@ class ModelBase(models.ModelBase):
     result = Column(Boolean(), default=False)
 
     def save(self, session=None):
-        import rock.db.sqlalchemy.api as db_api
-
-        if session is None:
-            session = db_api.get_session()
-
         super(ModelBase, self).save(session)
+
+    @staticmethod
+    def save_all(model_objs, session=None):
+        with session.begin(subtransactions=True):
+            session.add_all(instances=model_objs)
+            session.flush()
+
