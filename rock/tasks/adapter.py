@@ -14,19 +14,18 @@
 #    under the License.
 
 
-from nova.i18n import _, _LW, _LE
-
 import taskflows as rock_taskflow
 
-class CommonAdapter(object):
+class CommonAdapter():
 
-    def evacuate_vm(self,uuid,on_shared_storage):
+    def _evacuate_vm(self,uuid,on_shared_storage,evacuate):
         """ Evacuate a server from a failed host to a new one.
         """
 
-        rock_taskflow.run_evacuate_taskflow(uuid,on_shared_storage)
-        return evacuate_vm('8277fb3f-d506-455a-b285-0c62b3848f4b','True')
+        rock_taskflow.run_evacuate_taskflow(uuid,on_shared_storage,evacuate)
 
+    def evacuate_vm(self):
+        return self._evacuate_vm('8277fb3f-d506-455a-b285-0c62b3848f4b','True','True')
 
 
 
