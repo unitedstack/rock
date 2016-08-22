@@ -2,4 +2,6 @@ import adapter
 
 if __name__ == '__main__':
     c = adapter.CommonAdapter()
-    c.evacuate_vm()
+    #c.evacuate_vm()
+    c.list_services()
+

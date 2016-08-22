@@ -10,12 +10,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import manager
 import taskflow.engines
 from taskflow import task
 from taskflow import engines
 from taskflow.patterns import linear_flow as lf
 from flow_utils import BaseTask
-from actions import NovaAction,IPMIAction
+from actions import NovaAction
 from oslo_log import log as logging
 from nova.i18n import _, _LW, _LE 
 from taskflow.types import failure
@@ -25,7 +26,7 @@ class EvacuateTask(BaseTask,NovaAction):
 
     def execute(self,uuid,on_shared_storage,evacuate):
         n_client = self._get_client()
-        LOG.debug('%s.execute', self.__class__.__name__)
+        LOG.debug('%s.evacuate', self.__class__.__name__)
 
         if evacuate:
             print n_client.servers.evacuate(server=uuid,on_shared_storage=on_shared_storage)
@@ -50,14 +51,12 @@ class HostEvacuateTask(BaseTask,NovaAction):
     def revert(self,result,server):
         pass
 
+class NovaServiceTask(BaseTask,NovaAction):
+    def execute(self):
+        n_client = self._get_client()
+        LOG.debug('%s.service.list',self.__class__.__name__)
 
-class IPMITask(BaseTask,IPMIAction):
-
-    def execuate(self):
-        pass
-
-    def revert(self):
-        pass
+        print n_client.services.list()
 
 
 def run_evacuate_taskflow(uuid,on_shared_storage,evacuate):
@@ -67,12 +66,18 @@ def run_evacuate_taskflow(uuid,on_shared_storage,evacuate):
                   'evacuate':True
                  }
 
-    work_flow = lf.Flow(flow_name)
-    work_flow.add(EvacuateTask())
-    engine = taskflow.engines.load(work_flow,store=store_spec)
-    engine.run()
+    manager.run_flow(flow_name,store_spec,EvacuateTask())
 
-def sure_IPMI_taskflow():
-    pass
+def run_host_evacuate_taskflow(server,on_shared_storage):
+    flow_name = 'host_evacuate'
+    store_spec = {'server':server,
+                  'on_shared_storage':on_shared_storage
+                 }
+    manager.run_flow(flow_name,store_spec,HostEvacuateTask())
 
+def nova_service_taskflow():
+    
+    flow_name = 'service_list'
+    store_spec = None
 
+    manager.run_flow(flow_name,store_spec,NovaServiceTask()) 

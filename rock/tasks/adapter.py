@@ -26,6 +26,15 @@ class CommonAdapter():
     def evacuate_vm(self):
         return self._evacuate_vm('b4cd4206-bdac-453b-a44f-896f797ffbee',True)
 
+    def _host_evacuate(self,server,on_shared_storage):
 
+        rock_taskflow.run_host_evacuate_taskflow(server,on_shared_storage)
+
+    def host_evacuate(self):
+        return self._host_evacuate('server-68',True)
+
+
+    def list_services(self):
+        rock_taskflow.nova_service_taskflow()
 
 

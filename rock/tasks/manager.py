@@ -16,13 +16,12 @@
 from oslo_log import log as logging
 import taskflow.engines
 from taskflow.patterns import linear_flow
-
-from rock.tasks import flow_utils
+import flow_utils
 
 LOG = logging.getLogger(__name__)
 
 
-def run_flow(flow_name, tasks):
+def run_flow(flow_name,store_spec,tasks):
     """Constructs and run a task flow.
     """
 
@@ -33,7 +32,7 @@ def run_flow(flow_name, tasks):
     )
 
     # Now load (but do not run) the flow using the provided initial data.
-    flow_engine = taskflow.engines.load(task_flow)
+    flow_engine = taskflow.engines.load(task_flow,store_spec)
 
     with flow_utils.DynamicLogListener(flow_engine, logger=LOG):
         flow_engine.run()

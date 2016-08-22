@@ -42,5 +42,3 @@ class NovaAction():
         return n_client
 
 
-class IPMIAction():
-    pass
