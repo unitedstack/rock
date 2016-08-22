@@ -9,16 +9,16 @@ class IPMITool():
         self._password = password
         
     def power_on(self):
-        cmd = ipmitool -I lanplus -H self._target -U self._username -P self.password power on
+        cmd = ipmitool -I lanplus -H self._target -U self._username -P self._password power on
 
     def power_off(self):
-        cmd = ipmitool -I lanplus -H self._target -U self._username -P self.password power off 
+        cmd = ipmitool -I lanplus -H self._target -U self._username -P self._password power off 
 
     def power_cycle(self):
-        cmd = ipmitool -I lanplus -H self._target -U self._username -P self.password power cycle
+        cmd = ipmitool -I lanplus -H self._target -U self._username -P self._password power cycle
 
     def power_reset(self):
-        cmd = ipmitool -I lanplus -H self._target -U self._username -P self.password power reset
+        cmd = ipmitool -I lanplus -H self._target -U self._username -P self._password power reset
 
     
     os.system(cmd) 
