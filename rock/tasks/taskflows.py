@@ -28,7 +28,7 @@ class EvacuateTask(BaseTask,NovaAction):
         LOG.debug('%s.execute', self.__class__.__name__)
 
         if evacuate:
-            print n_client.servers.evacuate(uuid,on_shared_storage)
+            print n_client.servers.evacuate(server=uuid,on_shared_storage=on_shared_storage)
 
 #    def revert(self,result,uuid,on_shared_storage):
 #        method_name = '%s.revert' % self.__class__.__name__
@@ -45,7 +45,7 @@ class HostEvacuateTask(BaseTask,NovaAction):
         LOG.debug('%s.host.evacuate',self.__class__.__name__)
 
         if server:
-            print n_client.host_evacuate.do_host_evacuate(server)
+            print n_client.host_evacuate.do_host_evacuate(server=server)
 
     def revert(self,result,server):
         pass
@@ -74,3 +74,5 @@ def run_evacuate_taskflow(uuid,on_shared_storage,evacuate):
 
 def sure_IPMI_taskflow():
     pass
+
+

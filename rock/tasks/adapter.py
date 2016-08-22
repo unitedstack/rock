@@ -18,14 +18,13 @@ import taskflows as rock_taskflow
 
 class CommonAdapter():
 
-    def _evacuate_vm(self,uuid,on_shared_storage,evacuate):
+    def _evacuate_vm(self,uuid,on_shared_storage,evacuate=True):
         """ Evacuate a server from a failed host to a new one.
         """
 
         rock_taskflow.run_evacuate_taskflow(uuid,on_shared_storage,evacuate)
-
     def evacuate_vm(self):
-        return self._evacuate_vm('8277fb3f-d506-455a-b285-0c62b3848f4b','True','True')
+        return self._evacuate_vm('b4cd4206-bdac-453b-a44f-896f797ffbee',True)
 
 
 
