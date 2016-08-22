@@ -23,20 +23,21 @@ env_opts = [
 
 cfg.CONF.register_opts(env_opts)
 
+CONF = cfg.CONF
 
 class NovaAction():
     def _get_client(self):
 
-        auth=identity.Password(username=USERNAME,
-                              password=PASSWORD,
-                              project_name=PROJECT_NAME,
-                              auth_url=AUTH_URL,
-                              project_domain_id=PROJECT_DOMAIN_ID,
-                              user_domain_id=USER_DOMAIN_ID)
+        auth=identity.Password(username=CONF.USERNAME,
+                              password=CONF.PASSWORD,
+                              project_name=CONF.PROJECT_NAME,
+                              auth_url=CONF.AUTH_URL,
+                              project_domain_id=CONF.PROJECT_DOMAIN_ID,
+                              user_domain_id=CONF.USER_DOMAIN_ID)
 
         sess = session.Session(auth=auth,verify=False)
 
-        n_client = client.Client(VERSION,session=sess)
+        n_client = client.Client(CONF.VERSION,session=sess)
 
         return n_client
 

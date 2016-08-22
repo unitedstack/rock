@@ -23,10 +23,14 @@ from taskflow import task
 LOG = logging.getLogger(__name__)
 
 
-def _make_task_name(cls):
+def _make_task_name(cls,addons=None):
     """Makes a pretty name for a task class."""
     base_name = ".".join([cls.__module__, cls.__name__])
-    return base_name
+    extra = ''
+    if addons:
+        extra = ';%s' % (", ".join([str(a) for a in addons]))
+
+    return base_name + extra
 
 
 class BaseTask(task.Task):
@@ -36,12 +40,12 @@ class BaseTask(task.Task):
     implement the given task as the task name.
     """
 
-    def __init__(self, **kwargs):
-        super(BaseTask, self).__init__(self.make_name(), **kwargs)
+    def __init__(self,addons=None, **kwargs):
+        super(BaseTask, self).__init__(self.make_name(addons), **kwargs)
 
     @classmethod
-    def make_name(cls):
-        return _make_task_name(cls)
+    def make_name(cls,addons=None):
+        return _make_task_name(cls,addons)
 
 
 class DynamicLogListener(logging_listener.DynamicLoggingListener):

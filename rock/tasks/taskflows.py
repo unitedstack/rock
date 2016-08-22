@@ -30,13 +30,13 @@ class EvacuateTask(BaseTask,NovaAction):
         if evacuate:
             print n_client.servers.evacuate(uuid,on_shared_storage)
 
-    def revert(self,result,uuid,on_shared_storage):
-        method_name = '%s.revert' % self.__class__.__name__
-
-        LOG.warning(_LW('%(method_name)s: '
-                       'evacuate vm %(uuid) is failed'),
-                    {'method_name': method_name,
-                     'uuid': uuid})
+#    def revert(self,result,uuid,on_shared_storage):
+#        method_name = '%s.revert' % self.__class__.__name__
+#
+#        LOG.warning(_LW('%(method_name)s: '
+#                       'evacuate vm %(uuid)s is failed'),
+#                    {'method_name': method_name,
+#                     'uuid': uuid})
 
 class HostEvacuateTask(BaseTask,NovaAction):
 
