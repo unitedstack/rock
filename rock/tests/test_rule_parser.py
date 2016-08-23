@@ -21,7 +21,7 @@ testcase: host down
 situation: what if nova service all down, bug ping only one down.
 """
 
-from rock.tools import rule_parser
+from rock.rules import rule_parser
 
 test_rule = {
     "rule_name": "host_down",
@@ -46,12 +46,12 @@ test_rule = {
 }
 
 service_status = [
-    {"target": "a", "time":"00:06", "result": False},
-    {"target": "b", "time":"00:05", "result": False},
-    {"target": "c", "time":"00:04", "result": True},
-    {"target": "a", "time":"00:03", "result": False},
-    {"target": "b", "time":"00:02", "result": True},
-    {"target": "c", "time":"00:01", "result": True},
+    {"target": "a", "time": "00:06", "result": False},
+    {"target": "b", "time": "00:05", "result": False},
+    {"target": "c", "time": "00:04", "result": True},
+    {"target": "a", "time": "00:03", "result": False},
+    {"target": "b", "time": "00:02", "result": True},
+    {"target": "c", "time": "00:01", "result": True},
 ]
 
 ping_status = service_status
