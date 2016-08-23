@@ -13,22 +13,42 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_service import loopingcall
+import eventlet
+import commands
+from eventlet.queue import LightQueue
 
-from rock import extension_mgr
-from rock import gather
-from rock.db import models
+from oslo_config import cfg
 
 
-class HostMgmtPing(extensions.ExtensionDescriptor, models.HostMgmtPing):
+from rock import extension_manager
+
+host_mgmt_ping_opts_group = cfg.OptGroup(name='host_mgmt_ping',
+    title="Opts about host management IP ping delay")
+
+host_mgmt_ping_opts = [
+    cfg.ListOpt('target_addresses',
+                default=["127.0.0.1"],
+                help="IP address or hostname of target, hostname should be" +
+                "pingable directly."),
+]
+
+CONF = cfg.CONF
+CONF.register_group(host_mgmt_ping_opts_group)
+CONF.register_opts(host_mgmt_ping_opts, host_mgmt_ping_opts_group)
+
+
+class Hostmgmtping(extension_manager.ExtensionDescriptor):
     """Ping to management IP of host extension."""
 
     def __init__(self):
-        super(HostMgmtPing, self).__init__()
+        super(Hostmgmtping, self).__init__()
+        self.queue = LightQueue(100)
+        self.pool = eventlet.GreenPool(2)
+        self.targets = CONF.host_mgmt_ping.target_addresses
 
     @classmethod
     def get_name(cls):
-        return "Host Management Ping"
+        return "Host Management IP Ping"
 
     @classmethod
     def get_alias(cls):
@@ -38,4 +58,18 @@ class HostMgmtPing(extensions.ExtensionDescriptor, models.HostMgmtPing):
     def get_description(cls):
         return "Delay of ping to management IP of host."
 
-    def periodic_task(self,)
+    def periodic_task(self):
+        self.pool.spawn(self.producer)
+        self.pool.spawn(self.consumer)
+
+    def producer(self):
+        result = {}
+        for target in self.targets:
+            cmd = "ping -c 3 -t 3 -W 1 -i 0.3 %s" % target
+            output = commands.getoutput(cmd)
+            result[target] = output.split('\n')[-1].split('/')[-3]
+        self.queue.put(result, block=False, timeout=3)
+
+    def consumer(self):
+        result = self.queue.get(block=False, timeout=3)
+        print result
