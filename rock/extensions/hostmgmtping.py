@@ -19,8 +19,8 @@ from eventlet.queue import LightQueue
 
 from oslo_config import cfg
 
-
 from rock import extension_manager
+from rock.db.sqlalchemy.model_ping import ModelPing
 
 host_mgmt_ping_opts_group = cfg.OptGroup(name='host_mgmt_ping',
     title="Opts about host management IP ping delay")
@@ -72,4 +72,12 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
 
     def consumer(self):
         result = self.queue.get(block=False, timeout=3)
-        print result
+        ping_objs = self.get_models(result)
+        db_api.save_all(ping_objs)
+
+    def get_models(self,result):
+        objs = []
+        for key in result:
+            obj = ModelPing(target=key, delay=result[key])
+            objs.append(obj)
+        return objs
