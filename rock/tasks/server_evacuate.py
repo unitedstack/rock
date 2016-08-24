@@ -1,5 +1,6 @@
 from flow_utils import BaseTask
 from actions import NovaAction 
+import logging
 
 
 class ServerEvacuateTask(BaseTask,NovaAction):
