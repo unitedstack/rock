@@ -107,7 +107,9 @@ class RuleParser(object):
         return self._calculate(l2_rule, funcs)
 
     def _action(self):
-        print('do some action')
+        for target in self.l1_data:
+            if not self.l1_data[target]:
+                print('do some action')
 
     def _calculate(self, rule, funcs):
         def _recurse_calc(arg):
@@ -147,6 +149,8 @@ class RuleParser(object):
             for item in args[1]:
                 if item['result'] in [False, 'false', 'False']:
                     count += 1
+                else:
+                    break
             return count < boundary
 
         def count(self, *args):
