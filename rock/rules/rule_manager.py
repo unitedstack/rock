@@ -57,6 +57,7 @@ class RuleManager(object):
         self.periodic_task = \
                 loopingcall.FixedIntervalLoopingCall(self.calculate_task)
         self.periodic_task.start(interval=CONF.check_cases_interval)
+        self.periodic_task.wait()
 
     def calculate_task(self):
         for case in self.cases:
@@ -77,3 +78,4 @@ class RuleManager(object):
     def _calculate(self, rule_detail):
         parser = RuleParser(rule_detail)
         parser.calculate()
+        print "calculating"
