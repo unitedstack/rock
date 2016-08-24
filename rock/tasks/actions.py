@@ -19,6 +19,7 @@ env_opts = [
               default='default'),
     cfg.StrOpt('USER_DOMAIN_ID',
               default='default'),
+    cfg.StrOpt('host'),
 ]
 
 cfg.CONF.register_opts(env_opts)
