@@ -1,13 +1,13 @@
-from ipmi import IPMITool
+from actions import IPMIAction
 from flow_utils import BaseTask
 import logging
 
-class HostPowerTask(BaseTask,IPMITool):
+class HostPowerTask(BaseTask,IPMIAction):
 
     def execute(self, target, username, password):
         
         try:
-            info = IPMITool(target, username, password)
+            info = IPMIAction(target, username, password)
             info.power_off()
             result = info.power_status()
             if result == 'Chassis Power is off':
