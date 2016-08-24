@@ -3,3 +3,9 @@
 # process, which may cause wedges in the gate later.
 
 pbr>=1.6 # Apache-2.0
+six
+oslo.log
+oslo.config
+oslo.utils
+oslo.service
+oslo.log
