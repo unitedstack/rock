@@ -15,9 +15,6 @@
 
 from oslo_utils import importutils
 from oslo_config import cfg
-from oslo_service import loopingcall
-
-import eventlet
 
 
 def register_opts(conf):

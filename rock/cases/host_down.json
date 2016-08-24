@@ -1,9 +1,9 @@
 {
     "rule_name": "host_down",
     "collect_data": {
-        "service_result": {"data": ["%get_by_time", "service_list", 300],
+        "service_result": {"data": ["%get_by_time", "nova_service", 300],
                            "judge": ["%false_end_count_lt", 2]},
-        "ping_result": {"data": ["%get_by_time", "ping_delay", 300],
+        "ping_result": {"data": ["%get_by_time", "ping", 300],
                         "judge": ["%false_end_count_lt", 2]}
     },
     "l1_rule": [

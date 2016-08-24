@@ -12,17 +12,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
-import os
 
-from oslo_log import log as logging
-
-from rock.rules.rule_parser import RuleParser
-
-LOG = logging.getLogger(__name__)
-
-
-
-
-
-get_all_cases_recursively('D://zzy/1')
+def underline_to_camel(underline_format):
+    """
+        下划线命名格式驼峰命名格式
+    """
+    camel_format = ''
+    if isinstance(underline_format, str):
+        for _s_ in underline_format.split('_'):
+            camel_format += _s_.capitalize()
+    return camel_format

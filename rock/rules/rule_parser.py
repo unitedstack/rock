@@ -14,15 +14,29 @@
 
 import copy
 import json
+import datetime
 
 from oslo_log import log as logging
+from oslo_utils import importutils
+from oslo_utils import timeutils
+
+from rock.db.sqlalchemy import api as db_api
+from rock.rules import rule_utils
 
 
 LOG = logging.getLogger(__name__)
 
 
-def data_get_by_obj(obj_name, filters):
-    pass
+def data_get_by_obj_time(obj_name, delta):
+    model_name = 'model_' + obj_name
+    model = importutils.import_class(
+        'rock.db.sqlalchemy.%s.%s' %
+        (model_name, rule_utils.underline_to_camel(model_name)))
+    db_connection = db_api.Connection()
+    timedelta = datetime.timedelta(seconds=delta)
+    return db_connection.get_period_records(model,
+                                            timeutils.utcnow()-timedelta,
+                                            sort_key='create_at')
 
 
 class RuleParser(object):
@@ -125,8 +139,7 @@ class RuleParser(object):
             return all(args)
 
         def get_data_by_time(self, *args):
-            filters = {}
-            return data_get_by_obj(args[0], filters)
+            return data_get_by_obj_time(args[0], args[1])
 
         def false_end_count_lt(self, *args):
             boundary = int(args[0])
