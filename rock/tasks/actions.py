@@ -1,7 +1,7 @@
 from keystoneauth1 import identity
 from keystoneauth1 import session
 from novaclient import client
-
+import os
 from oslo_config import cfg
 
 env_opts = [ 
@@ -41,5 +41,38 @@ class NovaAction():
         n_client = client.Client(CONF.VERSION,session=sess)
 
         return n_client
+
+
+class IPMIAction():
+    
+    def __init__(self, target, username, password):
+        self._target = target
+        self._username = username
+        self._password = password
+ 
+    def power_on(self):
+        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+              + str(self._username) + ' -P '+ str(self._password) +' chassis power on'
+        os.system(cmd)
+
+    def power_off(self):
+        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+              + str(self._username) + ' -P '+ str(self._password) +' chassis power off'
+        os.system(cmd)
+
+    def power_cycle(self):
+        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+              + str(self._username) + ' -P '+ str(self._password) +' chassis power cycle'
+        os.system(cmd)
+
+    def power_reset(self):
+        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+              + str(self._username) + ' -P '+ str(self._password) +' chassis power reset'
+        os.system(cmd)
+
+    def power_status(self):
+        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+              + str(self._username) + ' -P '+ str(self._password) +' chassis power status'
+        os.system(cmd)
 
 
