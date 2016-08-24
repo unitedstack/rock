@@ -1,0 +1,21 @@
+{
+    "rule_name": "host_down",
+    "collect_data": {
+        "service_result": {"data": ["%get_by_time", "service_list", 300],
+                           "judge": ["%false_end_count_lt", 2]},
+        "ping_result": {"data": ["%get_by_time", "ping_delay", 300],
+                        "judge": ["%false_end_count_lt", 2]}
+    },
+    "l1_rule": [
+        "%and",
+        "$service_result",
+        "$ping_result"
+    ],
+    "l2_rule": [
+        "%==", ["%count", false], 1
+    ],
+    "action": [
+        ["IPMI", "$target", "power_off"],
+        ["evacuate", "$target"]
+    ]
+}
