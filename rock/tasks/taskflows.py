@@ -18,8 +18,8 @@ from taskflow.patterns import linear_flow as lf
 from flow_utils import BaseTask
 from actions import NovaAction
 from oslo_log import log as logging
-from nova.i18n import _, _LW, _LE 
-from taskflow.types import failure
+from nova.i18n import _, _LW, _LE
+from ipmi import IPMITool
 LOG = logging.getLogger(__name__)
 
 class EvacuateTask(BaseTask,NovaAction):
@@ -56,8 +56,17 @@ class NovaServiceTask(BaseTask,NovaAction):
         n_client = self._get_client()
         LOG.debug('%s.service.list',self.__class__.__name__)
 
-        print n_client.services.list()
+        services = n_client.services.list()
 
+        for s in services:
+            print "<Service: %s, Host: %s, State: %s>" % (s.binary,s.host,s.state)
+
+class HostPowerTask(BaseTask,IPMITool):
+
+    def execute(self, target, username, password):
+        
+        info = IPMITool(target, username, password)
+        result = info.power_status()
 
 def run_evacuate_taskflow(uuid,on_shared_storage,evacuate):
     flow_name =  'evacuate_vm'
@@ -81,3 +90,12 @@ def nova_service_taskflow():
     store_spec = None
 
     manager.run_flow(flow_name,store_spec,NovaServiceTask()) 
+
+def ipmi_taskflow(target, username, password):
+    flow_name = 'ipmi_check'
+    store_spec = {'target': target,
+                  'username': username,
+                  'password': password
+                 }
+
+    manager.run_flow(flow_name, store_spec, HostPowerTask()) 

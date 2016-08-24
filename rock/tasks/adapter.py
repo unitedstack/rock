@@ -37,4 +37,7 @@ class CommonAdapter():
     def list_services(self):
         rock_taskflow.nova_service_taskflow()
 
+    def power_operation(self, target, username, password):
+        rock_taskflow.ipmi_taskflow(target, username, password)   
+
 
