@@ -21,6 +21,7 @@ from oslo_config import cfg
 
 from rock import extension_manager
 from rock.db.sqlalchemy.model_ping import ModelPing
+from rock.db import api as db_api
 
 host_mgmt_ping_opts_group = cfg.OptGroup(name='host_mgmt_ping',
     title="Opts about host management IP ping delay")
@@ -65,9 +66,15 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
     def producer(self):
         result = {}
         for target in self.targets:
-            cmd = "ping -c 3 -t 3 -W 1 -i 0.3 %s" % target
-            output = commands.getoutput(cmd)
-            result[target] = output.split('\n')[-1].split('/')[-3]
+            # Send 3 packets one time and each packet timeout is 3000ms,
+            # interval between 3 packets is 0.3s, and the ping process
+            # will only wait for 3s for all
+            cmd = "ping -c 3 -t 4 -W 3000 -i 0.3 %s" % target
+            status, output = commands.getstatusoutput(cmd)
+            if status == 0:
+                result[target] = output.split('\n')[-1].split('/')[-3]
+            else:
+                result[target] = '9999'
         self.queue.put(result, block=False, timeout=3)
 
     def consumer(self):
@@ -75,9 +82,10 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
         ping_objs = self.get_models(result)
         db_api.save_all(ping_objs)
 
-    def get_models(self,result):
+    def get_models(self,data):
         objs = []
-        for key in result:
-            obj = ModelPing(target=key, delay=result[key])
+        for key in data:
+            obj = ModelPing(target=key, delay=data[key],
+                    result=True if float(data[key]) < 3000 else False)
             objs.append(obj)
         return objs

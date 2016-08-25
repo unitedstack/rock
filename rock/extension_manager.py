@@ -19,6 +19,7 @@ import os
 import six
 import eventlet
 import Queue
+import time
 
 from oslo_log import log as logging
 from oslo_config import cfg
@@ -129,7 +130,7 @@ class ExtensionManager(object):
         self.extensions[alias] = ext
 
     def _report_state(self):
-        print("State report, existing loading extensions: "
+        print(str(time.ctime()) + " State report, existing loading extensions: "
             + str(self.extensions))
 
     def report_state_loop(self):
