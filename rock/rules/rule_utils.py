@@ -18,7 +18,6 @@ def underline_to_camel(underline_format):
         下划线命名格式驼峰命名格式
     """
     camel_format = ''
-    if isinstance(underline_format, str):
-        for _s_ in underline_format.split('_'):
-            camel_format += _s_.capitalize()
+    for _s_ in underline_format.split('_'):
+        camel_format += _s_.capitalize()
     return camel_format

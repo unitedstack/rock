@@ -15,7 +15,7 @@
         "%==", ["%count", false], 1
     ],
     "action": [
-        ["IPMI", "$target", "power_off"],
-        ["evacuate", "$target"]
+        ["power_operation", "$target"],
+        ["host_evacuate", "$target"]
     ]
 }

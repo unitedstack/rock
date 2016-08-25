@@ -20,8 +20,9 @@ from oslo_log import log as logging
 from oslo_utils import importutils
 from oslo_utils import timeutils
 
-from rock.db.sqlalchemy import api as db_api
+from rock.db import api as db_api
 from rock.rules import rule_utils
+from rock.tasks.manager import run_flow
 
 
 LOG = logging.getLogger(__name__)
@@ -32,11 +33,16 @@ def data_get_by_obj_time(obj_name, delta):
     model = importutils.import_class(
         'rock.db.sqlalchemy.%s.%s' %
         (model_name, rule_utils.underline_to_camel(model_name)))
-    db_connection = db_api.Connection()
     timedelta = datetime.timedelta(seconds=delta)
-    return db_connection.get_period_records(model,
-                                            timeutils.utcnow()-timedelta,
-                                            sort_key='create_at')
+    return db_api.get_period_records(model,
+                                     timeutils.utcnow()-timedelta,
+                                     sort_key='create_at')
+
+
+ACTION_ALIAS = {
+    'power_operation': 'rock.tasks.power_operation.HostPowerTask',
+    'host_evacuate': 'rock.tasks.host_evacuate.HostEvacuateTask'
+}
 
 
 class RuleParser(object):
@@ -60,7 +66,7 @@ class RuleParser(object):
         funcs = self.Functions()
         splited_raw_data = {}
         for key, value in self.rule["collect_data"].items():
-            #self.raw_data[key] = self._calculate(value['data'], funcs)
+            self.raw_data[key] = self._calculate(value['data'], funcs)
             splited_raw_data[key] = {}
 
         for key, value in self.raw_data.items():
@@ -109,7 +115,16 @@ class RuleParser(object):
     def _action(self):
         for target in self.l1_data:
             if not self.l1_data[target]:
-                print('do some action')
+                tasks = []
+                task_name = target + 'action'
+                store_spec = {}
+                for task in self.rule['action']:
+                    class_name = ACTION_ALIAS[task[0]]
+                    task_cls = importutils.import_class(class_name)
+                    tasks.append(task_cls())
+                    store_spec['target'] = target
+
+                run_flow(task_name, store_spec, tasks)
 
     def _calculate(self, rule, funcs):
         def _recurse_calc(arg):
