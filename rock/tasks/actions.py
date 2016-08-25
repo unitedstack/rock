@@ -2,7 +2,10 @@ from keystoneauth1 import identity
 from keystoneauth1 import session
 from novaclient import client
 import os
+import json
 from oslo_config import cfg
+
+CONF = cfg.CONF
 
 env_opts = [ 
     cfg.StrOpt('USERNAME',
@@ -22,9 +25,9 @@ env_opts = [
     cfg.StrOpt('host'),
 ]
 
+
 cfg.CONF.register_opts(env_opts)
 
-CONF = cfg.CONF
 
 class NovaAction():
     def _get_client(self):
@@ -44,34 +47,38 @@ class NovaAction():
 
 
 class IPMIAction():
-    
-    def __init__(self, target, username, password):
-        self._target = target
-        self._username = username
-        self._password = password
- 
+    global data
+
+    with open('target.json', 'r') as f:
+        data = json.load(f)
+
+    def __init__(self,ip):
+        self._ip = ip
+        self._username = data[ip]['username']
+        self._password = data[ip]['password']
+
     def power_on(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power on'
         os.system(cmd)
 
     def power_off(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power off'
         os.system(cmd)
 
     def power_cycle(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power cycle'
         os.system(cmd)
 
     def power_reset(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power reset'
         os.system(cmd)
 
     def power_status(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._target) + ' -U ' \
+        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power status'
         os.system(cmd)
 

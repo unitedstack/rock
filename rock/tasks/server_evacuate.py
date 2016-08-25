@@ -3,9 +3,9 @@ from actions import NovaAction
 import logging
 
 
-class ServerEvacuateTask(BaseTask,NovaAction):
+class ServerEvacuate(BaseTask,NovaAction):
 
-    def execute(self, server, on_shared_storage):
+    def execute(self, on_shared_storage, server):
 
         success = False
         error_message = ""
@@ -13,8 +13,8 @@ class ServerEvacuateTask(BaseTask,NovaAction):
         try:
             logging.info("Resurrecting instance: %s" % server)
             (response, dictionary) = n_client.servers.evacuate(
-                server=server,
-                on_shared_storage=on_shared_storage)
+                on_shared_storage=on_shared_storage,
+                server = server)
 
             if response == None:
                 res_message = "No response while evacuating instance"
@@ -33,3 +33,5 @@ class ServerEvacuateTask(BaseTask,NovaAction):
             "reason": error_message,
         }
 
+    def revert():
+        pass

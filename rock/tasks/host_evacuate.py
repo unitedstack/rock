@@ -3,7 +3,7 @@ from actions import NovaAction
 from  server_evacuate import ServerEvacuateTask
 import logging
 
-class HostEvacuateTask(BaseTask,NovaAction):
+class HostEvacuate(BaseTask,NovaAction):
 
     def execute(self, host):
         n_client = self._get_client()
@@ -29,4 +29,6 @@ class HostEvacuateTask(BaseTask,NovaAction):
             else:
                 logging.error("Could not evacuate instance: %s" % server.to_dict())
 
+    def revert():
+        pass
 
