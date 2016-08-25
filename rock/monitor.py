@@ -26,9 +26,9 @@ def main(manager='rock.extension_manager.ExtensionManager'):
     register_opts(cfg.CONF)
     mgr_class = importutils.import_class(manager)
     ext_mgr = mgr_class('extensions')
-    ext_mgr.after_start()
     p = loopingcall.FixedIntervalLoopingCall(ext_mgr.report_state_loop)
     p.start(interval=4)
+    ext_mgr.after_start()
     p.wait()
 
 if __name__ == '__main__':
