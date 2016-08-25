@@ -22,11 +22,14 @@ Getting Start
 -------------
 
 * Initialize Database
-    - Change working directory to ../rock/db/sqlalchemy
-       $ cd  ../rock/db/sqlalchemy
-    - Modify alembic.ini, setup the `sqlalchemy.url` in section [alembic]
-    - Initialize database:
-       $ alembic upgrade head
-    - Downgrade database:
-       $ alembic downgrade base
+    1. Change working directory to ../rock/db/sqlalchemy
+        $ cd  ../rock/db/sqlalchemy
+
+    #. Modify alembic.ini, setup the `sqlalchemy.url` in section [alembic]
+
+    #. Initialize database:
+        $ alembic upgrade head
+
+    #. Downgrade database:
+        $ alembic downgrade base
 
