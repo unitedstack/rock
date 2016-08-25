@@ -36,7 +36,7 @@ openstack_credential_opts = [
                     default='admin'),
         cfg.StrOpt('user_domain_name',
                     default='default'),
-        cfg.IntOpt('nova_client_verison',
+        cfg.StrOpt('nova_client_version',
                     default=2.0),
         cfg.StrOpt('password',
                     default=None),
@@ -83,7 +83,7 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
             username=CONF.openstack_credential.username,
             password=CONF.openstack_credential.password,
             user_domain_name=CONF.openstack_credential.user_domain_name,
-            project_domain_name=CONF.openstack_credential.project_domain_name,
+            project_domain_name=CONF.openstack_credential.project_domain_id,
             project_name=CONF.openstack_credential.project_name
         )
         sess = session.Session(auth=auth,verify=False)
@@ -112,4 +112,3 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
                     )
             )
         db_api.save_all(objs)
-
