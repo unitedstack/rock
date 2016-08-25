@@ -87,6 +87,5 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
         for key in data:
             obj = ModelPing(target=key, delay=data[key],
                     result=True if float(data[key]) < 3000 else False)
-            print obj.target, obj.delay, obj.result
             objs.append(obj)
         return objs
