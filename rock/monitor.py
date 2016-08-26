@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from oslo_utils import importutils
 from oslo_config import cfg
 from oslo_service import loopingcall
@@ -25,7 +27,9 @@ def register_opts(conf):
 def main(manager='rock.extension_manager.ExtensionManager'):
     register_opts(cfg.CONF)
     mgr_class = importutils.import_class(manager)
-    ext_mgr = mgr_class('extensions')
+    file_path = os.path.abspath(__file__)
+    file_dir = os.path.dirname(file_path)
+    ext_mgr = mgr_class(file_dir+'/extensions')
     p = loopingcall.FixedIntervalLoopingCall(ext_mgr.report_state_loop)
     p.start(interval=4)
     ext_mgr.after_start()
