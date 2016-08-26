@@ -49,13 +49,13 @@ class NovaAction():
 class IPMIAction():
     global data
 
-    with open('target.json', 'r') as f:
+    with open('tasks/target.json', 'r') as f:
         data = json.load(f)
 
-    def __init__(self,ip):
-        self._ip = ip
-        self._username = data[ip]['username']
-        self._password = data[ip]['password']
+    def __init__(self,hostname):
+        self._ip = data[hostname]['ip']
+        self._username = data[hostname]['username']
+        self._password = data[hostname]['password']
 
     def power_on(self):
         cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \

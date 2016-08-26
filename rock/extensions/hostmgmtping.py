@@ -31,6 +31,9 @@ host_mgmt_ping_opts = [
                 default=["127.0.0.1"],
                 help="IP address or hostname of target, hostname should be" +
                 "pingable directly."),
+    cfg.DictOpt('ip_hostname_map',
+                default={},
+                help="IP addresses map to hostname"),
 ]
 
 CONF = cfg.CONF
@@ -46,6 +49,7 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
         self.queue = LightQueue(100)
         self.pool = eventlet.GreenPool(2)
         self.targets = CONF.host_mgmt_ping.target_addresses
+        self.targets_hostname = CONF.host_mgmt_ping.ip_hostname_map
 
     @classmethod
     def get_name(cls):
@@ -69,12 +73,13 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
             # Send 3 packets one time and each packet timeout is 3000ms,
             # interval between 3 packets is 0.3s, and the ping process
             # will only wait for 3s for all
-            cmd = "ping -c 3 -t 4 -W 3000 -i 0.3 %s" % target
+            cmd = "ping -c 3 -t 4 -W 3 -i 0.3 %s" % target
             status, output = commands.getstatusoutput(cmd)
             if status == 0:
-                result[target] = output.split('\n')[-1].split('/')[-3]
+                result[self.targets_hostname[target]] = \
+                            output.split('\n')[-1].split('/')[-3]
             else:
-                result[target] = '9999'
+                result[self.targets_hostname[target]] = '9999'
         self.queue.put(result, block=False, timeout=3)
 
     def consumer(self):
@@ -86,6 +91,6 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
         objs = []
         for key in data:
             obj = ModelPing(target=key, delay=data[key],
-                    result=True if float(data[key]) < 3000 else False)
+                    result=True if float(data[key]) < 3 else False)
             objs.append(obj)
         return objs

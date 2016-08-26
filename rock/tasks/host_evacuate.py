@@ -1,11 +1,12 @@
 from flow_utils import BaseTask
 from actions import NovaAction
-from  server_evacuate import ServerEvacuateTask
+from  server_evacuate import ServerEvacuate
 import logging
 
 class HostEvacuate(BaseTask,NovaAction):
 
-    def execute(self, host):
+    def execute(self, target):
+        host = target
         n_client = self._get_client()
 
         evacuated_host = host
@@ -17,7 +18,7 @@ class HostEvacuate(BaseTask,NovaAction):
         for server in evacuable_servers:
             logging.debug("Processing %s" % server)
             if hasattr(server,'id'):
-                response = ServerEvacuateTask().execute(server.id,True)
+                response = ServerEvacuate().execute(server.id,True)
                 if response['accepted']:
                     logging.info("Evacuated %s from %s: %s" %
                                  (response["uuid"], evacuated_host, response["reason"]))
@@ -25,7 +26,6 @@ class HostEvacuate(BaseTask,NovaAction):
                 else:
                     logging.error("Evacuation of %s on %s failed: %s" %
                                   (response["uuid"], evacuated_host, response["reason"]))
-                time.sleep(2)
             else:
                 logging.error("Could not evacuate instance: %s" % server.to_dict())
 

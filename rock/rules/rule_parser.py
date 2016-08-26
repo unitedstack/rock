@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -40,8 +39,8 @@ def data_get_by_obj_time(obj_name, delta):
 
 
 ACTION_ALIAS = {
-    'power_operation': 'rock.tasks.power_operation.HostPowerTask',
-    'host_evacuate': 'rock.tasks.host_evacuate.HostEvacuateTask'
+    'power_operation': 'rock.tasks.power_manager.PowerManager',
+    'host_evacuate': 'rock.tasks.host_evacuate.HostEvacuate'
 }
 
 
@@ -89,7 +88,7 @@ class RuleParser(object):
 
         def _replace_variate(target, rule):
             for posi, value in enumerate(rule):
-                if isinstance(value, str) and value.startswith('$'):
+                if isinstance(value, unicode) and value.startswith('$'):
                     rule[posi] = self.target_data[target][value[1:]]
                 elif isinstance(value, list):
                     _replace_variate(target, value)
@@ -128,7 +127,7 @@ class RuleParser(object):
 
     def _calculate(self, rule, funcs):
         def _recurse_calc(arg):
-            if isinstance(arg, list) and isinstance(arg[0], str) \
+            if isinstance(arg, list) and isinstance(arg[0], unicode) \
                     and arg[0].startswith('%'):
                 return self._calculate(arg, funcs)
             else:

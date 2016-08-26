@@ -10,3 +10,4 @@ oslo.utils
 oslo.service
 oslo.log
 oslo.db
+taskflow

@@ -20,7 +20,7 @@ from oslo_service import loopingcall
 import eventlet
 
 def register_opts(conf):
-	conf(default_config_files=['rock.ini'])
+	conf(default_config_files=['/etc/rock/rock.ini'])
 
 def main(manager='rock.extension_manager.ExtensionManager'):
     register_opts(cfg.CONF)

@@ -28,7 +28,7 @@ def run_flow(flow_name,store_spec,tasks):
     task_flow = linear_flow.Flow(flow_name)
 
     task_flow.add(
-        tasks
+        *tasks
     )
 
     # Now load (but do not run) the flow using the provided initial data.

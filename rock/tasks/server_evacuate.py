@@ -5,7 +5,7 @@ import logging
 
 class ServerEvacuate(BaseTask,NovaAction):
 
-    def execute(self, on_shared_storage, server):
+    def execute(self, server, on_shared_storage=True):
 
         success = False
         error_message = ""
