@@ -10,3 +10,5 @@ oslo.utils
 oslo.service
 oslo.db
 taskflow
+keystoneauth1
+python-novaclient
