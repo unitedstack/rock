@@ -2,12 +2,26 @@ from flow_utils import BaseTask
 from actions import NovaAction
 from  server_evacuate import ServerEvacuate
 import logging
+import time
 
 class HostEvacuate(BaseTask,NovaAction):
 
     def execute(self, target):
         host = target
         n_client = self._get_client()
+    
+        logging.info("checking the state of nova compute service on the host %s" % host)
+        services = n_client.services.list()
+        flag = False
+        while not flag:
+            for s in services:
+                if s.host == unicode(host) and s.binary == u'nova-compute' and s.state == u'down':
+                    flag = True
+                    print "<Service:%s, Host:%s, State:%s>" % (s.binary,s.host,s.state)
+                    break
+                else:
+                    flag = False
+                    time.sleep(5)
 
         evacuated_host = host
         evacuable_servers = n_client.servers.list(
