@@ -1,0 +1,12 @@
+[Unit]
+Description=rock-mon daemon
+Wants=rock-engine
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rock-mon
+ExecStop=/bin/bash /usr/local/bin/kill_mon.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
