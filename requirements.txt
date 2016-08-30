@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 
 pbr>=1.6 # Apache-2.0
-six
+six>=1.9.0
 oslo.log
 oslo.config
 oslo.utils
