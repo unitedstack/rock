@@ -1,6 +1,9 @@
 from actions import IPMIAction
 from flow_utils import BaseTask
-import logging
+from oslo_log import log as logging
+import time
+
+LOG = logging.getLogger(__name__)
 
 class PowerManager(BaseTask,IPMIAction):
 
@@ -11,7 +14,7 @@ class PowerManager(BaseTask,IPMIAction):
             info.power_off()
             result = info.power_status()
             if result == 0:
-                logging.info("Success to power off host %s" % target)
+                LOG.info("Success to power off host %s" % target)
             return True
         except Exception as e:
             return False

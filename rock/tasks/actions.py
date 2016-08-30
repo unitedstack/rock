@@ -7,41 +7,47 @@ from oslo_config import cfg
 
 CONF = cfg.CONF
 
-env_opts = [ 
-    cfg.StrOpt('USERNAME',
+openstack_credential_group = cfg.OptGroup(
+        'openstack_credential',
+        title='openstack administrator credential.')
+
+openstack_credential_opts = [ 
+    cfg.StrOpt('username',
               default='admin'),
-    cfg.IntOpt('VERSION',
+    cfg.StrOpt('nova_client_version',
               default=2.0),
-    cfg.StrOpt('PASSWORD',
-              default='1q2w3e4r'),
-    cfg.StrOpt('AUTH_URL',
-               default='http://lb.103.hatest.ustack.in:35357/v3'),
-    cfg.StrOpt('PROJECT_NAME',
-              default='openstack'),
-    cfg.StrOpt('PROJECT_DOMAIN_ID',
+    cfg.StrOpt('password',
+              default=None),
+    cfg.StrOpt('auth_url',
+               default=None),
+    cfg.StrOpt('porject_name',
+              default=None),
+    cfg.StrOpt('project_domain_id',
               default='default'),
-    cfg.StrOpt('USER_DOMAIN_ID',
+    cfg.StrOpt('user_domain_name',
               default='default'),
     cfg.StrOpt('host'),
 ]
 
-
-cfg.CONF.register_opts(env_opts)
+CONF.register_group(openstack_credential_group)
+CONF.register_opts(openstack_credential_opts, openstack_credential_group)
 
 
 class NovaAction():
     def _get_client(self):
+    """Get a nova client"""
 
-        auth=identity.Password(username=CONF.USERNAME,
-                              password=CONF.PASSWORD,
-                              project_name=CONF.PROJECT_NAME,
-                              auth_url=CONF.AUTH_URL,
-                              project_domain_id=CONF.PROJECT_DOMAIN_ID,
-                              user_domain_id=CONF.USER_DOMAIN_ID)
+        auth=identity.Password(username=CONF.openstack_credential.username,
+                              password=CONF.openstack_credential.password,
+                              project_name=CONF.openstack_credential.project_name,
+                              auth_url=CONF.openstack_credential.auth_url,
+                              project_domain_id=CONF.openstack_credential.project_domain_id,
+                              user_domain_id=CONF.openstack_credential.user_domain_name)
 
         sess = session.Session(auth=auth,verify=False)
+        nova_client_version = CONF.openstack_credential.nova_client_version
 
-        n_client = client.Client(CONF.VERSION,session=sess)
+        n_client = client.Client(nova_client_version,session=sess)
 
         return n_client
 
@@ -65,16 +71,6 @@ class IPMIAction():
     def power_off(self):
         cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
               + str(self._username) + ' -P '+ str(self._password) +' chassis power off'
-        os.system(cmd)
-
-    def power_cycle(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
-              + str(self._username) + ' -P '+ str(self._password) +' chassis power cycle'
-        os.system(cmd)
-
-    def power_reset(self):
-        cmd = 'ipmitool -I lanplus -H ' +str(self._ip) + ' -U ' \
-              + str(self._username) + ' -P '+ str(self._password) +' chassis power reset'
         os.system(cmd)
 
     def power_status(self):

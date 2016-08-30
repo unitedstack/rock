@@ -1,7 +1,8 @@
 from flow_utils import BaseTask
 from actions import NovaAction 
-import logging
+from oslo_log import log as logging
 
+LOG = logging.getLogger(__name__)
 
 class ServerEvacuate(BaseTask,NovaAction):
 
@@ -11,7 +12,7 @@ class ServerEvacuate(BaseTask,NovaAction):
         error_message = ""
         n_client = self._get_client()
         try:
-            logging.info("Resurrecting instance: %s" % server)
+            LOG.info("Resurrecting instance: %s" % server)
             (response, dictionary) = n_client.servers.evacuate(
                 on_shared_storage=on_shared_storage,
                 server = server)
@@ -33,5 +34,4 @@ class ServerEvacuate(BaseTask,NovaAction):
             "reason": error_message,
         }
 
-    def revert():
-        pass
+        
