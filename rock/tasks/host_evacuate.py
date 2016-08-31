@@ -47,7 +47,6 @@ class HostEvacuate(BaseTask,NovaAction,IPMIAction):
             else:
                 LOG.error("Could not evacuate instance: %s" % server.to_dict())
 
-        if len(evacuated_servers) == len(evacuable_servers):
-            IPMIAction.power_on() 
+        
 
 
