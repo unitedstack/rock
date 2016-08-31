@@ -20,7 +20,7 @@ openstack_credential_opts = [
               default=None),
     cfg.StrOpt('auth_url',
                default=None),
-    cfg.StrOpt('porject_name',
+    cfg.StrOpt('project_name',
               default=None),
     cfg.StrOpt('project_domain_id',
               default='default'),
@@ -35,7 +35,7 @@ CONF.register_opts(openstack_credential_opts, openstack_credential_group)
 
 class NovaAction():
     def _get_client(self):
-    """Get a nova client"""
+        """Get a nova client"""
 
         auth=identity.Password(username=CONF.openstack_credential.username,
                               password=CONF.openstack_credential.password,
