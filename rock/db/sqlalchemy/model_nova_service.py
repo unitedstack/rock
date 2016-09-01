@@ -22,6 +22,7 @@ from rock.db.sqlalchemy.model_base import ModelBase
 
 Base = declarative_base()
 
+
 class ModelNovaService(ModelBase, Base):
 
     __tablename__ = 'nova_service'

@@ -106,12 +106,12 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
         objs = []
         for k,v in result.items():
             objs.append(
-                    ModelNovaService(
-                        target=str(k),
-                        result=True if v['state'] == u'up' else False,
-                        service_state=True if v['state'] == u'up' else False,
-                        service_status=True \
-                                if v['status'] == u'enabled' else False
-                    )
+                ModelNovaService(
+                    target=str(k),
+                    result=True if v['state'] == u'up' else False,
+                    service_state=True if v['state'] == u'up' else False,
+                    service_status=True \
+                            if v['status'] == u'enabled' else False
+                )
             )
         db_api.save_all(objs)

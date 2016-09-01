@@ -29,8 +29,8 @@ class ModelBase(models.ModelBase):
 
     id = Column(Integer(), primary_key=True)
     created_at = Column(DateTime(),
-                       default=lambda: timeutils.utcnow(),
-                       nullable=False)
+                        default=lambda: timeutils.utcnow(),
+                        nullable=False)
     target = Column(String(36), nullable=False)
     result = Column(Boolean(), nullable=False)
 
@@ -42,4 +42,3 @@ class ModelBase(models.ModelBase):
         with session.begin(subtransactions=True):
             session.add_all(instances=model_objs)
             session.flush()
-
