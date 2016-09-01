@@ -108,7 +108,7 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
             objs.append(
                     ModelNovaService(
                         target=str(k),
-                        result=True if v.state == u'up' else False,
+                        result=True if v['state'] == u'up' else False,
                         service_state=str(v['state']),
                         service_status=str(v['status'])
                     )
