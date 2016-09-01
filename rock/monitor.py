@@ -19,7 +19,6 @@ from oslo_utils import importutils
 from oslo_config import cfg
 from oslo_service import loopingcall
 from oslo_log import log as logging
-from oslo_log import
 
 import eventlet
 
