@@ -15,14 +15,27 @@
 
 from oslo_utils import importutils
 from oslo_config import cfg
+from oslo_log import log as logging
 
 
-def register_opts(conf):
-    conf(default_config_files=['/etc/rock/rock.ini'])
-
+def prepare_log():
+    DEFAULT_LOG_DIR = '/var/log'
+    DEFAULT_LOG_FILE = 'rock-engine.log'
+    CONF = cfg.CONF
+    logging.register_options(CONF)
+    CONF(default_config_files=['/etc/rock/rock.ini'])
+    CONF.set_default('log_dir', CONF.get('log_dir', None) or DEFAULT_LOG_DIR)
+    try:
+        log_file = CONF.get('rock_engine_log_file')
+        CONF.set_default('log_file', log_file)
+    except NoSuchOptError:
+        CONF.set_default('log_file', DEFAULT_LOG_FILE)
+    logging.setup(CONF, "rock-mon")
 
 def main(manager='rock.rules.rule_manager.RuleManager'):
-    register_opts(cfg.CONF)
+    prepare_log()
+    LOG = logging.getLogger(__name__)
+    LOG.info('Start rock engine')
     mgr_class = importutils.import_class(manager)
     mgr = mgr_class('cases')
     mgr.after_start()

@@ -18,14 +18,29 @@ import os
 from oslo_utils import importutils
 from oslo_config import cfg
 from oslo_service import loopingcall
+from oslo_log import log as logging
 
 import eventlet
 
-def register_opts(conf):
-	conf(default_config_files=['/etc/rock/rock.ini'])
+
+def prepare_log():
+    DEFAULT_LOG_DIR = '/var/log'
+    DEFAULT_LOG_FILE = 'rock-mon.log'
+    CONF = cfg.CONF
+    logging.register_options(CONF)
+    CONF(default_config_files=['/etc/rock/rock.ini'])
+    CONF.set_default('log_dir', CONF.get('log_dir', None) or DEFAULT_LOG_DIR)
+    try:
+        log_file = CONF.get('rock_mon_log_file')
+        CONF.set_default('log_file', log_file)
+    except NoSuchOptError:
+        CONF.set_default('log_file', DEFAULT_LOG_FILE)
+    logging.setup(CONF, "rock-mon")
 
 def main(manager='rock.extension_manager.ExtensionManager'):
-    register_opts(cfg.CONF)
+    prepare_log()
+    LOG = logging.getLogger(__name__)
+    LOG.info('Start rock moniter.')
     mgr_class = importutils.import_class(manager)
     file_path = os.path.abspath(__file__)
     file_dir = os.path.dirname(file_path)
