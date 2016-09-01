@@ -109,8 +109,9 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
                     ModelNovaService(
                         target=str(k),
                         result=True if v['state'] == u'up' else False,
-                        service_state=str(v['state']),
-                        service_status=str(v['status'])
+                        service_state=True if v['state'] == u'up' else False,
+                        service_status=True \
+                                if v['status'] == u'enabled' else False
                     )
             )
         db_api.save_all(objs)
