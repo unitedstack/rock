@@ -28,9 +28,11 @@ from oslo_utils import timeutils
 class ModelBase(models.ModelBase):
 
     id = Column(Integer(), primary_key=True)
-    create_at = Column(DateTime(), default=lambda: timeutils.utcnow())
-    target = Column(String(36))
-    result = Column(Boolean(), default=False)
+    created_at = Column(DateTime(),
+                       default=lambda: timeutils.utcnow(),
+                       nullable=False)
+    target = Column(String(36), nullable=False)
+    result = Column(Boolean(), nullable=False)
 
     def save(self, session=None):
         super(ModelBase, self).save(session)

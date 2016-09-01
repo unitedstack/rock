@@ -19,6 +19,7 @@
 from oslo_config import cfg
 from oslo_db.sqlalchemy import session as db_session
 from oslo_utils import timeutils
+from oslo_log import log as logging
 from sqlalchemy import desc
 
 from rock.db.sqlalchemy.model_base import ModelBase
@@ -26,6 +27,8 @@ from rock.db.sqlalchemy.model_base import ModelBase
 CONF = cfg.CONF
 
 _FACADE = None
+
+LOG = logging.getLogger(__name__)
 
 
 def _create_facade_lazily():
@@ -113,12 +116,14 @@ class Connection(object):
         try:
             model_obj.save(session=session)
         except Exception:
-            raise
+            LOG.warning('Can not save db object: %r at %r' \
+                    %(model_obj.__class__, model_obj.created_at))
 
     @staticmethod
     def save_all(model_objs, session=get_session()):
         try:
             ModelBase.save_all(model_objs, session=session)
         except Exception:
-            raise
+            LOG.warning('Can not save db object: %r at %r' \
+                    %(model_objs[0].__class__, model_objs[0].created_at))
 

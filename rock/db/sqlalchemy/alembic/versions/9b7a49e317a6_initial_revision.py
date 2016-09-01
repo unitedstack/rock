@@ -21,25 +21,26 @@ def upgrade():
     op.create_table(
         "ping",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("create_at",
+        sa.Column("created_at",
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
                   nullable=False),
         sa.Column("target", sa.String(length=36), nullable=False),
-        sa.Column("result", sa.Boolean(), default=False, nullable=False),
+        sa.Column("result", sa.Boolean(), nullable=False),
         sa.Column("delay", sa.Float(), default=0.0, nullable=False)
     )
 
     op.create_table(
         "nova_service",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("create_at",
+        sa.Column("created_at",
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
                   nullable=False),
         sa.Column("target", sa.String(length=36), nullable=False),
-        sa.Column("result", sa.Boolean(), default=False, nullable=False),
-        sa.Column("service_status", sa.String(length=8), nullable=True)
+        sa.Column("result", sa.Boolean(), nullable=False),
+        sa.Column("service_status", sa.Boolean(), nullable=False)
+        sa.Column("service_state", sa.Boolean(), nullable=False)
 
     )
 

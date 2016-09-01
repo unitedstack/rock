@@ -14,7 +14,7 @@
 # under the License.
 
 from sqlalchemy import Column
-from sqlalchemy import String
+from sqlalchemy import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 from rock.db.sqlalchemy.model_base import ModelBase
@@ -26,5 +26,6 @@ class ModelNovaService(ModelBase, Base):
 
     __tablename__ = 'nova_service'
 
-    service_status = Column(String(length=8), nullable=True)
+    service_state = Column(Boolean(), nullable=False)
+    service_status = Column(Boolean(), nullable=False)
 

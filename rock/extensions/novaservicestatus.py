@@ -96,8 +96,9 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
         services = n_client.services.list()
         result = {}
         for service in services:
-            if service.binary == 'nova-compute':
-                result[service.host] = service.state
+            if service.binary == u'nova-compute':
+                result[service.host] = {'state': service.state,
+                                        'status': service.status}
         self.queue.put(result, block=False, timeout=1)
 
     def consumer(self):
@@ -106,9 +107,10 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
         for k,v in result.items():
             objs.append(
                     ModelNovaService(
-                        target=k,
-                        result=True if v == u'up' else False,
-                        service_status=str(v)
+                        target=str(k),
+                        result=True if v.state == u'up' else False,
+                        service_state=str(v['state']),
+                        service_status=str(v['status'])
                     )
             )
         db_api.save_all(objs)
