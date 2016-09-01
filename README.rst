@@ -23,13 +23,12 @@ Getting Start
 
 * Initialize Database
 
-    1. After rock installed, modify /etc/rock/alembic.ini, setup the
-        `sqlalchemy.url` in section [alembic].
+1. After rock installed, modify /etc/rock/alembic.ini, setup the `sqlalchemy.url` in section [alembic].
 
-    2. Initialize database:
+2. Initialize database:
 
-        $ rock-db-manage upgrade head
+    $ rock-db-manage upgrade head
 
-    3. Downgrade database:
+3. Downgrade database:
 
-        $ rock-db-manage downgrade base
+    $ rock-db-manage downgrade base
