@@ -30,7 +30,7 @@ def prepare_log():
         CONF.set_default('log_file', log_file)
     except cfg.NoSuchOptError:
         CONF.set_default('log_file', DEFAULT_LOG_FILE)
-    logging.setup(CONF, "rock-mon")
+    logging.setup(CONF, "rock-engine")
 
 def main(manager='rock.rules.rule_manager.RuleManager'):
     prepare_log()
