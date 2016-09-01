@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+cd /usr/lib/python2.7/site-packages/rock/db/sqlalchemy
+echo $1 $2
+if [ "$1" == "upgrade" ] && [ "$2" == "head" ];then
+	alembic -c /etc/rock/alembic.ini ${1} ${2}
+	exit 0
+elif [ "$1" == "downgrade" ] && [ "$2" == "base" ];then
+	alembic -c /etc/rock/alembic.ini ${1} ${2}
+	exit 0
+else
+	echo -e "Arguements error!\nUsage:\nrock-db-manage upgrade head\nrock-db-manage downgrade base"
+	exit 1
+fi
