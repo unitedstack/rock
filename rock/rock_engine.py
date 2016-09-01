@@ -19,7 +19,7 @@ from oslo_log import log as logging
 
 
 def prepare_log():
-    DEFAULT_LOG_DIR = '/var/log'
+    DEFAULT_LOG_DIR = '/var/log/rock'
     DEFAULT_LOG_FILE = 'rock-engine.log'
     CONF = cfg.CONF
     logging.register_options(CONF)
@@ -28,7 +28,7 @@ def prepare_log():
     try:
         log_file = CONF.get('rock_engine_log_file')
         CONF.set_default('log_file', log_file)
-    except NoSuchOptError:
+    except cfg.NoSuchOptError:
         CONF.set_default('log_file', DEFAULT_LOG_FILE)
     logging.setup(CONF, "rock-mon")
 
