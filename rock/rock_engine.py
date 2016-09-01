@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from oslo_utils import importutils
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -30,6 +32,8 @@ def prepare_log():
         CONF.set_default('log_file', log_file)
     except cfg.NoSuchOptError:
         CONF.set_default('log_file', DEFAULT_LOG_FILE)
+    if not os.path.exists(CONF.log_dir):
+        os.mkdir(CONF.log_dir)
     logging.setup(CONF, "rock-engine")
 
 def main(manager='rock.rules.rule_manager.RuleManager'):

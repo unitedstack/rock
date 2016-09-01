@@ -35,6 +35,8 @@ def prepare_log():
         CONF.set_default('log_file', log_file)
     except cfg.NoSuchOptError:
         CONF.set_default('log_file', DEFAULT_LOG_FILE)
+    if not os.path.exists(CONF.log_dir):
+        os.mkdir(CONF.log_dir)
     logging.setup(CONF, "rock-mon")
 
 def main(manager='rock.extension_manager.ExtensionManager'):
