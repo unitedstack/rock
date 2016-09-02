@@ -35,6 +35,7 @@ def data_get_by_obj_time(obj_name, delta):
     timedelta = datetime.timedelta(seconds=delta)
     return db_api.get_period_records(model,
                                      timeutils.utcnow()-timedelta,
+                                     end_time=timeutils.utcnow(),
                                      sort_key='created_at')
 
 
@@ -68,7 +69,8 @@ class RuleParser(object):
         funcs = self.Functions()
         splited_raw_data = {}
         for key, value in self.rule["collect_data"].items():
-            self.raw_data[key] = self._calculate(value['data'], funcs)
+            rule = copy.deepcopy(value['data'])
+            self.raw_data[key] = self._calculate(rule, funcs)
             splited_raw_data[key] = {}
 
         for key, value in self.raw_data.items():
@@ -110,7 +112,7 @@ class RuleParser(object):
                     i.append(self.l1_data)
                     _add_l1_result(i)
 
-        l2_rule = self.rule['l2_rule']
+        l2_rule = copy.deepcopy(self.rule['l2_rule'])
         _add_l1_result(l2_rule)
         return self._calculate(l2_rule, funcs)
 

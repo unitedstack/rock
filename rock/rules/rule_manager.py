@@ -77,6 +77,6 @@ class RuleManager(object):
                             (e.message, file_name))
 
     def _calculate(self, rule_detail):
+        LOG.info("Calculating %s", rule_detail)
         parser = RuleParser(rule_detail)
         parser.calculate()
-        LOG.info("Calculating %s", rule_detail)

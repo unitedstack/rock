@@ -11,6 +11,7 @@ class PowerManager(BaseTask,IPMIAction):
     def execute(self,target):
         
         try:
+            LOG.info("Trying to power off %s.", target)
             info = IPMIAction(target)
             info.power_off()
             time.sleep(5)
@@ -22,8 +23,11 @@ class PowerManager(BaseTask,IPMIAction):
                     data = json.load(f)
                     if data.get(target, None) is not None:
                         data.pop(target)
+                """
+                We do not need to write back right now.
                 with open('/etc/rock/target.json','w+') as f:
                     json.dump(data,f)
+                """
 
             return True
         except Exception as e:
