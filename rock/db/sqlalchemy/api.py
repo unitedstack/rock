@@ -78,15 +78,17 @@ class Connection(object):
             try:
                 result = query.all()
                 return result
-            except Exception:
-                raise
+            except Exception as err:
+                LOG.error("Database exception: %" % err)
+                return []
         else:
             try:
                 result = query.from_self().\
                          order_by(getattr(model, sort_key)).all()
                 return result
-            except Exception:
-                raise
+            except Exception as err:
+                LOG.error("Database exception: %" % err)
+                return []
 
     def get_period_records(self,
                            model,
@@ -95,22 +97,24 @@ class Connection(object):
                            sort_key='id',
                            sort_dir='desc'):
         query = model_query(model)
-        query = query.filter(model.create_at >= start_time,
-                             model.create_at <= end_time)
+        query = query.filter(model.created_at >= start_time,
+                             model.created_at <= end_time)
         if sort_dir == 'desc':
             try:
                 result = query.from_self().\
                          order_by(desc(getattr(model, sort_key))).all()
                 return result
-            except Exception:
-                raise
+            except Exception as err:
+                LOG.error("Database exception: %" % err)
+                return []
         else:
             try:
                 result = query.from_self().\
                          order_by(getattr(model, sort_key)).all()
                 return result
-            except Exception:
-                raise
+            except Exception as err:
+                LOG.error("Database exception: %" % err)
+                return []
 
     def save(self, model_obj, session=get_session()):
         try:
