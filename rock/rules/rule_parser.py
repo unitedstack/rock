@@ -35,7 +35,7 @@ def data_get_by_obj_time(obj_name, delta):
     timedelta = datetime.timedelta(seconds=delta)
     return db_api.get_period_records(model,
                                      timeutils.utcnow()-timedelta,
-                                     sort_key='create_at')
+                                     sort_key='created_at')
 
 
 ACTION_ALIAS = {
@@ -57,7 +57,10 @@ class RuleParser(object):
 
     def calculate(self):
         self._collect_data()
+        LOG.info("Got target data %s", self.target_data)
         l2_result = self._rule_mapping_per_target()
+        LOG.info("Got l1 data %s", self.l1_data)
+        LOG.info("Got l2 result %s", l2_result)
         if l2_result:
             self._action()
 
@@ -116,6 +119,7 @@ class RuleParser(object):
             if not self.l1_data[target]:
                 tasks = []
                 task_name = target + 'action'
+                LOG.info("Triggered action on %s.", target)
                 store_spec = {}
                 for task in self.rule['action']:
                     class_name = ACTION_ALIAS[task[0]]

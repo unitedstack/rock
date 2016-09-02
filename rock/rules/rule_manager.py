@@ -70,6 +70,7 @@ class RuleManager(object):
                 with open(os.path.join(dir_path, file_name), 'r') as f:
                     try:
                         self.cases.append(json.loads(f.read()))
+                        LOG.info("Case %s loaded", file_name)
                     except Exception as e:
                         LOG.warning(
                             'Load case error, error %s, case_file %s.' %
@@ -78,4 +79,4 @@ class RuleManager(object):
     def _calculate(self, rule_detail):
         parser = RuleParser(rule_detail)
         parser.calculate()
-        print "calculating"
+        LOG.info("Calculating %s", rule_detail)

@@ -4,7 +4,7 @@
         "service_result": {"data": ["%get_by_time", "nova_service", 300],
                            "judge": ["%false_end_count_lt", 2]},
         "ping_result": {"data": ["%get_by_time", "ping", 300],
-                        "judge": ["%false_end_count_lt", 2]}
+                        "judge": ["%false_end_count_lt", 6]}
     },
     "l1_rule": [
         "%and",

@@ -42,7 +42,7 @@ def main(manager='rock.rules.rule_manager.RuleManager'):
     log = logging.getLogger(__name__)
     log.info('Start rock engine')
     mgr_class = importutils.import_class(manager)
-    mgr = mgr_class('cases')
+    mgr = mgr_class('/etc/rock/cases')
     mgr.after_start()
 
 if __name__ == '__main__':
