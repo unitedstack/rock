@@ -36,6 +36,17 @@ class HostEvacuate(BaseTask,NovaAction,IPMIAction):
         evacuated = list()
         for ID in evacuated_servers:
            evacuated.append(n_client.servers.get(ID))
+           
+        flag = False
+        while not flag:
+            flag = True
+            for server in evacuated:
+                server.task_state = getattr(server,'OS-EXT-STS:task_state')
+                if server.task_state != None:
+                    flag = False
+                    time.sleep(3)
+                    break
+           
         for server in evacuated:
             LOG.debug("checking the status of server: %s" % server.id)
             server.host = getattr(server,'OS-EXT-SRV-ATTR:host')
