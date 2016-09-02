@@ -55,7 +55,7 @@ class NovaAction():
 class IPMIAction():
     global data
 
-    with open('tasks/target.json', 'r') as f:
+    with open('/etc/rock/target.json', 'r') as f:
         data = json.load(f)
 
     def __init__(self,hostname):
