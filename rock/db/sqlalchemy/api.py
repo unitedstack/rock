@@ -93,12 +93,18 @@ class Connection(object):
     def get_period_records(self,
                            model,
                            start_time,
-                           end_time=timeutils.utcnow(),
+                           end_time,
                            sort_key='id',
                            sort_dir='desc'):
+
+        if hasattr(end_time, '__call__'):
+                _end_time = end_time()
+        else:
+                _end_time = end_time
+
         query = model_query(model)
         query = query.filter(model.created_at >= start_time,
-                             model.created_at <= end_time)
+                             model.created_at <= _end_time)
         if sort_dir == 'desc':
             try:
                 result = query.from_self().\

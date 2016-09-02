@@ -45,13 +45,13 @@ def get_last_n_records(model, n, sort_key='id', sort_dir='desc'):
 
 def get_period_records(model,
                        start_time,
-                       end_time=timeutils.utcnow(),
+                       end_time=lambda: timeutils.utcnow(),
                        sort_key='id',
                        sort_dir='desc'):
     """Get records create_at between start_time and end_time."""
     return _IMPL.get_period_records(model,
                                     start_time,
-                                    end_time=end_time,
+                                    end_time,
                                     sort_key=sort_key,
                                     sort_dir=sort_dir)
 
