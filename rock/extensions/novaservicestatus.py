@@ -32,20 +32,13 @@ openstack_credential_group = cfg.OptGroup(
         title='Openstack administrator credential.')
 
 openstack_credential_opts = [
-        cfg.StrOpt('username',
-                    default='admin'),
-        cfg.StrOpt('user_domain_name',
-                    default='default'),
-        cfg.StrOpt('nova_client_version',
-                    default=2.0),
-        cfg.StrOpt('password',
-                    default=None),
-        cfg.StrOpt('auth_url',
-                    default=None),
-        cfg.StrOpt('project_name',
-                    default='admin'),
-        cfg.StrOpt('project_domain_id',
-                    default='default')
+        cfg.StrOpt('username', default='admin'),
+        cfg.StrOpt('user_domain_name', default='default'),
+        cfg.StrOpt('nova_client_version', default=2.0),
+        cfg.StrOpt('password', default=None),
+        cfg.StrOpt('auth_url', default=None),
+        cfg.StrOpt('project_name', default='admin'),
+        cfg.StrOpt('project_domain_id', default='default')
         ]
 
 CONF.register_group(openstack_credential_group)
@@ -86,6 +79,7 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
             project_domain_name=CONF.openstack_credential.project_domain_id,
             project_name=CONF.openstack_credential.project_name
         )
+
         sess = session.Session(auth=auth,verify=False)
         nova_client_version = CONF.openstack_credential.nova_client_version
         n_client = client.Client(nova_client_version, session=sess)
@@ -97,21 +91,29 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
         result = {}
         for service in services:
             if service.binary == u'nova-compute':
-                result[service.host] = {'state': service.state,
-                                        'status': service.status}
+                result[service.host] = {
+                        'state': service.state,
+                        'status': service.status,
+                        'disabled_reason': service.disabled_reason
+                }
         self.queue.put(result, block=False, timeout=1)
 
     def consumer(self):
         result = self.queue.get(block=False, timeout=1)
         objs = []
         for k,v in result.items():
+            if v['disabled_reason'] is not None:
+                disabled_reason = str(v['disabled_reason'])
+            else:
+                disabled_reason = v['disabled_reason']
             objs.append(
                 ModelNovaService(
                     target=str(k),
                     result=True if v['state'] == u'up' else False,
                     service_state=True if v['state'] == u'up' else False,
                     service_status=True \
-                            if v['status'] == u'enabled' else False
+                            if v['status'] == u'enabled' else False,
+                    disabled_reason=disabled_reason
                 )
             )
         db_api.save_all(objs)

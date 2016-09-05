@@ -15,6 +15,7 @@
 
 from sqlalchemy import Column
 from sqlalchemy import Boolean
+from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 
 from rock.db.sqlalchemy.model_base import ModelBase
@@ -29,4 +30,4 @@ class ModelNovaService(ModelBase, Base):
 
     service_state = Column(Boolean(), nullable=False)
     service_status = Column(Boolean(), nullable=False)
-
+    disabled_reason = Column(String(255), nullable=True)

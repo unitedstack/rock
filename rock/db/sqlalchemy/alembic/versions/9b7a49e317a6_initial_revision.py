@@ -40,9 +40,10 @@ def upgrade():
         sa.Column("target", sa.String(length=36), nullable=False),
         sa.Column("result", sa.Boolean(), nullable=False),
         sa.Column("service_status", sa.Boolean(), nullable=False),
-        sa.Column("service_state", sa.Boolean(), nullable=False)
-
+        sa.Column("service_state", sa.Boolean(), nullable=False),
+        sa.Column("disabled_reason", sa.String(length=255), nullable=True)
     )
+
 
 def downgrade():
     op.drop_table('ping')
