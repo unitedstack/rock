@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+import time
+import datetime
+
 from flow_utils import BaseTask
 from actions import NovaAction
 from server_evacuate import ServerEvacuate
 from oslo_log import log as logging
-import time
-import datetime
 
 
 LOG = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class HostEvacuate(BaseTask, NovaAction):
             evacuated_servers_id.append(server.id)
 
             if hasattr(server, 'id'):
-                response = ServerEvacuate().execute(server.id,True)
+                response = ServerEvacuate().execute(server.id, True)
                 if response['accepted']:
                     LOG.info("Request to evacuate server: %s accepted" %
                              server.id)
@@ -44,17 +45,38 @@ class HostEvacuate(BaseTask, NovaAction):
                 LOG.error("Could not evacuate instance: %s" %
                           server.to_dict())
 
-        time.sleep(90)
+        self.check_evacuate_status(n_client, evacuated_servers_id,
+                                   evacuated_host)
 
         return self.get_evacuate_results(n_client,
                                          evacuated_servers_id,
                                          evacuated_host,
                                          taskflow_uuid)
 
-    def get_evacuate_results(self, n_client, vm_uuids,
+    def check_evacuate_status(self, n_client, vms_uuid, vm_origin_host,
+                              check_times=6, time_delta=15):
+        continue_flag = True
+        for i in range(check_times):
+            if continue_flag:
+                for vm_id in vms_uuid:
+                    vm = n_client.servers.get(vm_id)
+                    vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
+                    vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
+
+                    if (vm_task_state is not None) or \
+                            (vm_host == unicode(vm_origin_host)):
+                        time.sleep(time_delta)
+                        continue_flag = True
+                        break
+
+                    continue_flag = False
+            else:
+                break
+
+    def get_evacuate_results(self, n_client, vms_uuid,
                              vm_origin_host, taskflow_uuid):
         results = []
-        for vm_id in vm_uuids:
+        for vm_id in vms_uuid:
             vm = n_client.servers.get(vm_id)
             vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
             vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
