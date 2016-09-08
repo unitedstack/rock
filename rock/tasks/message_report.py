@@ -39,7 +39,7 @@ activemq_opts = [
         'server_ip',
         default='127.0.0.1',
         help='the ipaddress of activemq server'),
-    cfg.PortOpt(
+    cfg.IntOpt(
         'server_port',
         default=61613,
         help='the port of of activemq server'),
@@ -52,13 +52,13 @@ CONF.register_opts(activemq_opts, activemq_group)
 class ConnectionListener(stomp.ConnectionListener):
 
     def on_error(self, headers, body):
-        LOG.error("Can't send message to queue due to: \n" % body)
+        LOG.error("Can't send message to queue due to: \n%s" % body)
 
     def on_send(self, frame):
         LOG.info("Sending message: %s to activemq server." % frame)
 
     def on_connecting(self, host_and_port):
-        LOG.info("Connecting to activemq server: " % host_and_port)
+        LOG.info("Connecting to activemq server: %s" % str(host_and_port))
 
     def on_connected(self, headers, body):
         LOG.info("Successfully connected to activemq server.")
@@ -80,10 +80,10 @@ class MessageReport(BaseTask):
         connection.connect(
             username=CONF.activemq.username,
             passcode=CONF.activemq.password, wait=True)
-
-        connection.send(
+        for message in message_body:
+            connection.send(
                     destination=message_destination,
-                    body=message_body,
+                    body=str(message),
                     content_type=message_content_type,
                     headers=message_headers,
                     keyword_headers=message_keyword_headers)

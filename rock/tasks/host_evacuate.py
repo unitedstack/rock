@@ -84,11 +84,11 @@ class HostEvacuate(BaseTask, NovaAction):
         severity = '2'
         if success:
             summary = 'vm ' + str(vm.id) + '/' + self.get_vm_ip(vm) + \
-                      ' ' + str(vm.hostid) + '/' + \
+                      ' ' + str(vm.hostId) + '/' + \
                       str(getattr(vm, 'OS-EXT-SRV-ATTR:host')) + ' HA成功'
         else:
             summary = 'vm ' + str(vm.id) + '/' + self.get_vm_ip(vm) + \
-                      ' ' + str(vm.hostid) + '/' + \
+                      ' ' + str(vm.hostId) + '/' + \
                       str(getattr(vm, 'OS-EXT-SRV-ATTR:host')) + ' HA失败'
         last_occurrence = datetime.datetime.utcnow(). \
                             strftime('%m/%d/%Y %H:%M:%S')
@@ -102,13 +102,13 @@ class HostEvacuate(BaseTask, NovaAction):
 
         single_result = {
                 'Severity': severity,
-                'summary': summary,
+                'Summary': summary,
                 'LastOccurrence': last_occurrence,
-                'status': status,
-                'sourceID': source_id,
+                'Status': status,
+                'SourceID': source_id,
                 'SourceEventID': source_event_id,
-                'sourceCIName': source_ci_name,
-                'sourceAlertKey': source_alert_key,
+                'SourceCIName': source_ci_name,
+                'SourceAlertKey': source_alert_key,
                 "SourceSeverity": source_severity
         }
 
