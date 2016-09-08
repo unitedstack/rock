@@ -68,9 +68,9 @@ class ConnectionListener(stomp.ConnectionListener):
 
 
 class MessageReport(BaseTask):
-
-    def execute(self, destination=None, message_body=None, content_type=None,
-                headers={}, keyword_headers={}):
+    def execute(self, message_destination=None, message_body=None,
+                message_content_type=None, message_headers={},
+                message_keyword_headers={}):
 
         host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port),]
         connection = stomp.Connection(host_and_port)
@@ -82,11 +82,10 @@ class MessageReport(BaseTask):
             passcode=CONF.activemq.password, wait=True)
 
         connection.send(
-                    destination=destination,
+                    destination=message_destination,
                     body=message_body,
-                    content_type=content_type,
-                    headers=headers,
-                    keyword_headers=kw_headers)
-
+                    content_type=message_content_type,
+                    headers=message_headers,
+                    keyword_headers=message_keyword_headers)
         time.sleep(1)
         connection.disconnect()
