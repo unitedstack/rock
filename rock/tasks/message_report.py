@@ -68,7 +68,7 @@ class ConnectionListener(stomp.ConnectionListener):
 
 
 class MessageReport(BaseTask):
-    def execute(self, message_destination=None, message_body=None,
+    def execute(self, message_body, message_destination='/queue/eventQueue',
                 message_content_type=None, message_headers={},
                 message_keyword_headers={}):
 
