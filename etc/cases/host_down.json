@@ -20,10 +20,13 @@
                     "$target_data",
                     [
                         "%and",
-                        "map.service_result.is_disabled",
+                        [
+                            "%not",
+                            "map.service_result.service_state"
+                        ],
                         [
                             "%==",
-                            "map.service_result.disable_reason",
+                            "map.service_result.disabled_reason",
                             "host_down_disable"
                         ]
                     ]
@@ -36,6 +39,6 @@
     "action": [
         ["power_operation"],
         ["host_evacuate"],
-        ["host_disable", "disable_reason:host_down_disable"]
+        ["host_disable", "disabled_reason:host_down_disable"]
     ]
 }

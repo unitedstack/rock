@@ -141,6 +141,9 @@ class RuleParser(object):
                     class_name = ACTION_ALIAS[task[0]]
                     task_cls = importutils.import_class(class_name)
                     tasks.append(task_cls())
+                    for input_params in task[1:]:
+                        input_kv = input_params.spilt(':')
+                        store_spec[input_kv[0]] = input_kv[1]
 
                 run_flow(task_name, store_spec, tasks)
 
@@ -213,6 +216,7 @@ class RuleParser(object):
             '%<=': 'lt_or_eq',
             '%and': '_and',
             '%or': '_or',
+            '%not': '_not',
             '%get_by_time': 'get_data_by_time',
             '%false_end_count_lt': 'false_end_count_lt',
             '%count': 'count',
@@ -230,6 +234,9 @@ class RuleParser(object):
 
         def _or(self, *args):
             return any(args)
+
+        def _not(self, *args):
+            return not args[0]
 
         def get_data_by_time(self, *args):
             return data_get_by_obj_time(args[0], args[1])
