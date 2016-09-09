@@ -39,6 +39,7 @@
     "action": [
         ["power_operation"],
         ["host_evacuate"],
-        ["host_disable", "disabled_reason:host_down_disable"]
+        ["host_disable", "disabled_reason:host_down_disable"],
+        ["message_report"]
     ]
 }
