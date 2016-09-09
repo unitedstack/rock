@@ -32,7 +32,7 @@ test_rule = """
         "service_result": {"data": ["%get_by_time", "nova_service", 300],
                            "judge": ["%false_end_count_lt", 2]},
         "ping_result": {"data": ["%get_by_time", "ping", 300],
-                        "judge": ["%false_end_count_lt", 6]}
+                        "judge": ["%false_end_count_lt", 2]}
     },
     "l1_rule": [
         "%or",
@@ -42,16 +42,22 @@ test_rule = """
     "l2_rule": [
         "%and",
         ["%==", ["%count", "$l1_data", "l1_result", false], 1],
-        ["%<=",
-            ["%count",
-                ["%map",
+        [
+            "%<=",
+            [
+                "%count",
+                [
+                    "%map",
                     "$target_data",
                     [
                         "%and",
-                        "map.service_result.is_disabled",
+                        [
+                            "%not",
+                            "map.service_result.service_status"
+                        ],
                         [
                             "%==",
-                            "map.service_result.disable_reason",
+                            "map.service_result.disabled_reason",
                             "host_down_disable"
                         ]
                     ]
@@ -61,21 +67,31 @@ test_rule = """
             ],
         2]
     ],
-    "action": [
-        ["power_operation"],
-        ["host_evacuate"],
-        ["host_disable", "disable_reason:host_down_disable"]
-    ]
+    "action": {
+        "filters": [
+            [
+                "%==",
+                "$service_result.service_status",
+                true
+            ]
+        ],
+        "tasks": [
+            ["power_operation"],
+            ["host_evacuate"],
+            ["host_disable", "disabled_reason:host_down_disable"],
+            ["message_report", "message_destination:/queue/eventQueue"]
+        ]
+    }
 }
 """
 
 service_status = [
-    {u"target": u"a", u"time": u"00:06", u"result": False, u"is_disabled": True, u"disable_reason": u"host_down_disable"},
-    {u"target": u"b", u"time": u"00:05", u"result": False, u"is_disabled": True, u"disable_reason": u"some_other_reason"},
-    {u"target": u"c", u"time": u"00:04", u"result": True, u"is_disabled": False, u"disable_reason": u""},
-    {u"target": u"a", u"time": u"00:03", u"result": False, u"is_disabled": False, u"disable_reason": u""},
-    {u"target": u"b", u"time": u"00:02", u"result": True, u"is_disabled": False, u"disable_reason": u""},
-    {u"target": u"c", u"time": u"00:01", u"result": True, u"is_disabled": True, u"disable_reason": u"host_down_disable"},
+    {u"target": u"a", u"time": u"00:06", u"result": False, u"service_status": True, u"disabled_reason": u"host_down_disable"},
+    {u"target": u"b", u"time": u"00:05", u"result": False, u"service_status": True, u"disabled_reason": u"some_other_reason"},
+    {u"target": u"c", u"time": u"00:04", u"result": True, u"service_status": False, u"disabled_reason": u""},
+    {u"target": u"a", u"time": u"00:03", u"result": False, u"service_status": False, u"disabled_reason": u""},
+    {u"target": u"b", u"time": u"00:02", u"result": True, u"service_status": False, u"disabled_reason": u""},
+    {u"target": u"c", u"time": u"00:01", u"result": True, u"service_status": True, u"disabled_reason": u"host_down_disable"},
 ]
 
 ping_status = service_status

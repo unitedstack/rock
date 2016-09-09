@@ -130,15 +130,28 @@ class RuleParser(object):
         return self._calculate(l2_rule, funcs)
 
     def _action(self):
+        funcs = self.Functions()
+        actions = self.rule['action']['tasks']
         for target in self.l1_data:
             if not self.l1_data[target]['l1_result']:
+
+                filter_flag = False
+                for each_filter in self.rule['action']['filters']:
+                    rule = copy.deepcopy(each_filter)
+                    rule = self._replace_rule_parameter(
+                        rule, self.target_data[target])
+                    if not self._calculate(rule, funcs):
+                        filter_flag = True
+                if filter_flag:
+                    continue
+
+                LOG.info("Triggered action on %s.", target)
                 tasks = []
                 task_uuid = uuid.uuid4()
                 task_name = 'task-' + str(task_uuid)
-                LOG.info("Triggered action on %s.", target)
                 store_spec = {'task_uuid': task_uuid,
                               'target': target}
-                for task in self.rule['action']:
+                for task in actions:
                     class_name = ACTION_ALIAS[task[0]]
                     task_cls = importutils.import_class(class_name)
                     tasks.append(task_cls())
@@ -168,17 +181,20 @@ class RuleParser(object):
         func = getattr(funcs, r[0])
         return func(*r[1:])
 
-    def _replace_rule_parameter(self, rule):
+    def _replace_rule_parameter(self, rule, input=None):
         if not isinstance(rule, list):
             return
 
         def _recurse_replace(arg):
             if isinstance(arg, list) and isinstance(arg[0], unicode) \
                     and arg[0].startswith('%'):
-                return self._replace_rule_parameter(arg)
+                return self._replace_rule_parameter(arg, input)
             elif isinstance(arg, unicode) and arg.startswith('$'):
                 args = arg[1:].split('.')
-                ret = getattr(self, args[0])
+                if not input:
+                    ret = getattr(self, args[0])
+                else:
+                    ret = input[args[0]]
                 args.pop(0)
                 while args:
                     ret = ret[args[0]]
