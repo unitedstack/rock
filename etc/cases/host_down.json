@@ -22,7 +22,7 @@
                         "%and",
                         [
                             "%not",
-                            "map.service_result.service_state"
+                            "map.service_result.service_status"
                         ],
                         [
                             "%==",

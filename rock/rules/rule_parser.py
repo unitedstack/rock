@@ -78,7 +78,7 @@ class RuleParser(object):
         # {"data_model": [list_of_all_target_resources]}
         for key, value in self.rule["collect_data"].items():
             rule = copy.deepcopy(value['data'])
-            # self.raw_data[key] = self._calculate(rule, funcs)
+            self.raw_data[key] = self._calculate(rule, funcs)
             splited_raw_data[key] = {}
 
         # splited_raw_data organized by data_model first, then target.
@@ -131,10 +131,10 @@ class RuleParser(object):
 
     def _action(self):
         for target in self.l1_data:
-            if not self.l1_data[target]:
+            if not self.l1_data[target]['l1_result']:
                 tasks = []
                 task_uuid = uuid.uuid4()
-                task_name = 'task-' + task_uuid
+                task_name = 'task-' + str(task_uuid)
                 LOG.info("Triggered action on %s.", target)
                 store_spec = {'task_uuid': task_uuid,
                               'target': target}
@@ -143,7 +143,7 @@ class RuleParser(object):
                     task_cls = importutils.import_class(class_name)
                     tasks.append(task_cls())
                     for input_params in task[1:]:
-                        input_kv = input_params.spilt(':')
+                        input_kv = input_params.split(':')
                         store_spec[input_kv[0]] = input_kv[1]
 
                 run_flow(task_name, store_spec, tasks)

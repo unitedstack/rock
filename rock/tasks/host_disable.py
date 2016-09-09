@@ -24,17 +24,17 @@ LOG = logging.getLogger(__name__)
 
 class HostDisable(BaseTask, NovaAction):
 
-    def execute(self, target, disable_reason):
+    def execute(self, target, disabled_reason):
         n_client = self._get_client()
 
         response = n_client.services.disable_log_reason(
             host=target,
             binary='nova-compute',
-            reason=disable_reason
+            reason=disabled_reason
         )
-        LOG.info("Host %s disabled for reason %s.", target, disable_reason)
+        LOG.info("Host %s disabled for reason %s.", target, disabled_reason)
 
-        if response['accepted']:
-            LOG.info("Host %s disable successfully.", target)
+        if response.status == 'disabled':
+            LOG.info("Host %s disabled successfully.", target)
         else:
-            LOG.error("Host %s disable failed, reason %s.", target, response)
+            LOG.error("Host %s disabled failed, reason %s.", target, response)
