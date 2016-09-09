@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import datetime
+import json
 
 from flow_utils import BaseTask
 from actions import NovaAction
@@ -134,12 +135,12 @@ class HostEvacuate(BaseTask, NovaAction):
                 "SourceSeverity": source_severity
         }
 
-        return single_result
+        return json.dumps(single_result)
 
     def get_vm_ip(self, vm):
         vm_ip = ''
         for k, v in vm.networks.items():
             for ip in v:
                 vm_ip += str(ip)+','
-        vm_ip.rstrip(',')
-        return vm_ip
+        ip = vm_ip.rstrip(',')
+        return ip
