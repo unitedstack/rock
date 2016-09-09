@@ -7,15 +7,39 @@
                         "judge": ["%false_end_count_lt", 6]}
     },
     "l1_rule": [
-        "%and",
-        "$service_result",
-        "$ping_result"
+        "%or",
+        "$service_result.judge_result",
+        "$ping_result.judge_result"
     ],
     "l2_rule": [
-        "%==", ["%count", false], 1
+        "%and",
+        ["%==", ["%count", "$l1_data", "l1_result", false], 1],
+        ["%<=",
+            ["%count",
+                ["%map",
+                    "$target_data",
+                    [
+                        "%and",
+                        [
+                            "%not",
+                            "map.service_result.service_status"
+                        ],
+                        [
+                            "%==",
+                            "map.service_result.disabled_reason",
+                            "host_down_disable"
+                        ]
+                    ]
+                ],
+                "map_result",
+                true
+            ],
+        2]
     ],
     "action": [
-        ["power_operation", "$target"],
-        ["host_evacuate", "$target"]
+        ["power_operation"],
+        ["host_evacuate"],
+        ["host_disable", "disabled_reason:host_down_disable"],
+        ["message_report"]
     ]
 }

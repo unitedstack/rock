@@ -43,6 +43,8 @@ def main(manager='rock.rules.rule_manager.RuleManager'):
     log.info('Start rock engine')
     mgr_class = importutils.import_class(manager)
     mgr = mgr_class('/etc/rock/cases')
+    from rock.tasks.check_and_run import check_and_run
+    check_and_run()
     mgr.after_start()
 
 if __name__ == '__main__':
