@@ -20,11 +20,11 @@ def check_and_run():
 
     if all([book_id,flow_id]):
         with contextlib.closing(backend.get_connection()) as conn:
-        try:
-            lb = conn.get_logbook(book_id)
-            flow_detail = lb.find(flow_id)
-        except exc.NotFound:
-            pass
+            try:
+                lb = conn.get_logbook(book_id)
+                flow_detail = lb.find(flow_id)
+            except exc.NotFound:
+                pass
         
     flow_engine = taskflow.engines.load_from_detail(flow_detail,
                                                     backend=backend,
