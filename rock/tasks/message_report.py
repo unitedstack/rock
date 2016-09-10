@@ -83,7 +83,7 @@ class MessageReport(BaseTask):
         for message in message_body:
             connection.send(
                     destination=message_destination,
-                    body=str(message),
+                    body=message,
                     content_type=message_content_type,
                     headers=message_headers,
                     keyword_headers=message_keyword_headers)
