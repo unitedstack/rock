@@ -59,11 +59,11 @@ def upgrade():
         sa.Column('created_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('updated_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('meta', su.JSONType),
         sa.Column('name', sa.String(length=NAME_LENGTH)),
         sa.Column('uuid', sa.String(length=UUID_LENGTH),
@@ -75,11 +75,11 @@ def upgrade():
         sa.Column('created_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('updated_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
                   sa.ForeignKey('logbooks.uuid',
                              ondelete='CASCADE')),
@@ -96,11 +96,11 @@ def upgrade():
         sa.Column('created_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('updated_at',
                   sa.DateTime(),
                   default=lambda: timeutils.utcnow(),
-                  nullable=False),
+                  nullable=True),
         sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
                   sa.ForeignKey('flowdetails.uuid',
                              ondelete='CASCADE')),
@@ -124,6 +124,6 @@ def upgrade():
 def downgrade():
     op.drop_table('ping')
     op.drop_table('nova_service')
-    op.drop_table('logbooks')
-    op.drop_table('flowdetails')
     op.drop_table('atomdetails')
+    op.drop_table('flowdetails')
+    op.drop_table('logbooks')
