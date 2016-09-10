@@ -4,7 +4,6 @@ from oslo_config import cfg
 import MySQLdb
 from sql_statement import *
 
-import ptpdb; ptpdb.set_trace()
 CONF = cfg.CONF
 database_group = cfg.OptGroup(
         'database',
@@ -34,3 +33,4 @@ table = 'flowdetails'
 cursor.execute(get_last(table))
 
 flowdetails = cursor.fetchone()
+

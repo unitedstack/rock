@@ -24,44 +24,58 @@ import contextlib
 from taskflow.persistence.backends import impl_sqlalchemy
 from oslo_config import cfg
 import sql_exec
+from oslo_utils import importutils
+
 LOG = logging.getLogger(__name__)
 
 
 CONF = dict(connection=cfg.CONF.database.connection)
 
+def get_tasks_cls_name(tasks):
+    result = []
+    for task in tasks:
+        task_module_str = task.__module__
+        module_name = task_module_str.split('.')[-1]
+        cls_name = ''
+        for i in module_name.split('_'):
+            cls_name += (i[0].upper() + i[1:])
+        result.append(task_module_str + '.' + cls_name)
+    return result
+
+def get_tasks_objects(task_cls_name):
+    result = []
+    for i in task_cls_name:
+        result.append(importutils.import_class(i)())
+    return result
+
+def create_flow(flow_name, tasks_cls_name):
+    task_flow = linear_flow.Flow(flow_name)
+    tasks = get_tasks_objects(tasks_cls_name)
+    task_flow.add(
+        *tasks
+    )
+
+    return task_flow
 
 def run_flow(flow_name,store_spec,tasks):
     """Constructs and run a task flow.
     """
 
-    task_flow = linear_flow.Flow(flow_name)
-
-    task_flow.add(
-        *tasks
-    )
-
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
-    
     book_id = None
     flow_id = None
    
-    try:
-        book = models.LogBook(flow_name)
-        flow_detail = models.FlowDetail("root",uuid=uuidutils.generate_uuid())
-        book.add(flow_detail)
-        with contextlib.closing(backend.get_connection()) as conn:
-            conn.save_logbook(book)
-        LOG.info("!! Your tracking id is: '%s+%s'" % (book.uuid,
-                                                   flow_detail.uuid))
-
-    except Exception as e:
-        LOG.error("task flow is failed.")
-
+    #book = models.LogBook(flow_name)
+    
+    #with contextlib.closing(backend.get_connection()) as conn:
+    #    conn.save_logbook(book)
+    tasks_cls_name = get_tasks_cls_name(tasks)
     # Now load (but do not run) the flow using the provided initial data.
-    flow_engine = taskflow.engines.load_from_factory(task_flow,
+    flow_engine = taskflow.engines.load_from_factory(create_flow,
+                                                    factory_args=(flow_name, tasks_cls_name),
                                                     store=store_spec,
                                                     backend=backend,
-                                                    book=book,
+                                                    book=None,
                                                     engine='serial')
 
     with flow_utils.DynamicLogListener(flow_engine, logger=LOG):
