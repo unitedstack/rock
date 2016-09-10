@@ -29,6 +29,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = dict(connection=cfg.CONF.database.connection)
 
+
 def run_flow(flow_name,store_spec,tasks):
     """Constructs and run a task flow.
     """

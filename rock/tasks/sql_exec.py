@@ -34,4 +34,3 @@ table = 'flowdetails'
 cursor.execute(get_last(table))
 
 flowdetails = cursor.fetchone()
-

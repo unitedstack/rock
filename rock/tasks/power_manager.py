@@ -6,6 +6,7 @@ import json
 
 LOG = logging.getLogger(__name__)
 
+
 class PowerManager(BaseTask,IPMIAction):
 
     def execute(self,target):
@@ -17,7 +18,7 @@ class PowerManager(BaseTask,IPMIAction):
             time.sleep(5)
             result = info.power_status()
 
-            if result == None:
+            if result is None:
                 LOG.info("Success to power off host %s" % target)
                 with open('/etc/rock/target.json','r+') as f:
                     data = json.load(f)
@@ -32,4 +33,3 @@ class PowerManager(BaseTask,IPMIAction):
             return True
         except Exception as e:
             return False
-

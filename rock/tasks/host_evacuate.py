@@ -21,6 +21,12 @@ class HostEvacuate(BaseTask, NovaAction):
         n_client = self._get_client()
         evacuated_host = host
 
+        # Force down nova compute of target
+        # self.force_down_nova_compute(n_client, host)
+
+        # Check nova compute state of target
+        self.check_nova_compute_state(n_client, host)
+
         evacuable_servers = n_client.servers.list(
                         search_opts={
                             'host': evacuated_host,
@@ -54,7 +60,29 @@ class HostEvacuate(BaseTask, NovaAction):
                                          evacuated_host,
                                          taskflow_uuid)
 
-    def check_evacuate_status(self, n_client, vms_uuid, vm_origin_host,
+    @staticmethod
+    def force_down_nova_compute(n_client, host):
+        n_client.services.force_down(host=host, binary='nova-compute')
+
+    @staticmethod
+    def check_nova_compute_state(n_client, host,
+                                 check_times=20, time_delta=5):
+        LOG.info("Checking nova compute state of host %s , ensure it is"
+                 " in state 'down'." % host)
+        for t in range(check_times):
+            nova_compute = n_client.services.list(host=host,
+                                                  binary='nova-compute')
+            state = nova_compute[0].state
+            if state == u'up':
+                LOG.warning("Nova compute of host %s is up, waiting it"
+                            " to down." % host)
+                time.sleep(time_delta)
+            else:
+                LOG.info("Nova compute of host %s is down." % host)
+                break
+
+    @staticmethod
+    def check_evacuate_status(n_client, vms_uuid, vm_origin_host,
                               check_times=6, time_delta=15):
         continue_flag = True
         for i in range(check_times):
@@ -137,7 +165,8 @@ class HostEvacuate(BaseTask, NovaAction):
 
         return json.dumps(single_result)
 
-    def get_vm_ip(self, vm):
+    @staticmethod
+    def get_vm_ip(vm):
         vm_ip = ''
         for k, v in vm.networks.items():
             for ip in v:

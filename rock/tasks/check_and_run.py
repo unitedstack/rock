@@ -12,6 +12,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = dict(connection=cfg.CONF.database.connection)
 
+
 def check_and_run():
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
     if sql_exec.flowdetails[5] != 'SUCCESS':

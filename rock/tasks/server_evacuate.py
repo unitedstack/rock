@@ -4,6 +4,7 @@ from oslo_log import log as logging
 
 LOG = logging.getLogger(__name__)
 
+
 class ServerEvacuate(BaseTask,NovaAction):
 
     def execute(self, server, on_shared_storage=True):
@@ -17,7 +18,7 @@ class ServerEvacuate(BaseTask,NovaAction):
                 on_shared_storage=on_shared_storage,
                 server = server)
 
-            if response == None:
+            if response is None:
                 res_message = "No response while evacuating instance"
             elif response.status_code == 200:
                 success = True
@@ -33,5 +34,3 @@ class ServerEvacuate(BaseTask,NovaAction):
             "accepted": success,
             "reason": error_message,
         }
-
-        
