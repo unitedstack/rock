@@ -7,9 +7,30 @@ from flow_utils import BaseTask
 from actions import NovaAction
 from server_evacuate import ServerEvacuate
 from oslo_log import log as logging
+from oslo_config import cfg
 
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
+
+
+def register_host_mgmt_ping(conf):
+    host_mgmt_ping_group = \
+        cfg.OptGroup(name='host_mgmt_ping',
+                     title="Opts about host management IP ping delay")
+    host_mgmt_ping_opts = [
+        cfg.DictOpt('ip_hostname_map',
+                    default={},
+                    help="IP addresses map to hostname"),
+    ]
+
+    if getattr(conf, 'host_mgmt_ping', None) is None:
+        conf.register_group(host_mgmt_ping_group)
+    else:
+        if getattr(conf.host_mgmt_ping, 'ip_hostname_map', None) is None:
+            CONF.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
+
+register_host_mgmt_ping(CONF)
 
 
 class HostEvacuate(BaseTask, NovaAction):
@@ -143,17 +164,16 @@ class HostEvacuate(BaseTask, NovaAction):
         return results
 
     def make_vm_evacuate_result(self, vm, success, taskflow_uuid):
+        target = str(getattr(vm, 'OS-EXT-SRV-ATTR:host'))
         severity = '2'
         if success:
-            summary = 'vm ' + str(vm.id) + '/' + self.get_vm_ip(vm) + \
-                      ' ' + str(vm.hostId) + '/' + \
-                      str(getattr(vm, 'OS-EXT-SRV-ATTR:host')) + ' HA成功'
+            summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
+                      target + '|' + self.get_target_ip(target) + ' HA success'
         else:
-            summary = 'vm ' + str(vm.id) + '/' + self.get_vm_ip(vm) + \
-                      ' ' + str(vm.hostId) + '/' + \
-                      str(getattr(vm, 'OS-EXT-SRV-ATTR:host')) + ' HA失败'
-        last_occurrence = datetime.datetime.utcnow(). \
-                            strftime('%m/%d/%Y %H:%M:%S')
+            summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
+                      target + '|' + self.get_target_ip(target) + ' HA failed'
+        last_occurrence = datetime.datetime.utcnow().\
+            strftime('%m/%d/%Y %H:%M:%S')
         status = 1
         source_id = 10
         # source_identifier =
@@ -184,3 +204,10 @@ class HostEvacuate(BaseTask, NovaAction):
                 vm_ip += str(ip)+','
         ip = vm_ip.rstrip(',')
         return ip
+
+    @staticmethod
+    def get_target_ip(target):
+        for ip, hostname in CONF.host_mgmt_ping.ip_hostname_map:
+            if target == hostname:
+                return ip
+        return 'none'
