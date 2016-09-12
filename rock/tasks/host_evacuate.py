@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-import time
 import datetime
 import json
+import time
 
-from flow_utils import BaseTask
-from actions import NovaAction
-from server_evacuate import ServerEvacuate
-from oslo_log import log as logging
 from oslo_config import cfg
+from oslo_log import log as logging
 
+from actions import NovaAction
+from flow_utils import BaseTask
+from server_evacuate import ServerEvacuate
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -169,10 +169,10 @@ class HostEvacuate(BaseTask, NovaAction):
         severity = '2'
         if success:
             summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
-                      target + '|' + self.get_target_ip(target) + ' HA success'
+                      target + '|' + self.get_target_ip(target) + ' HA SUCCESS'
         else:
             summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
-                      target + '|' + self.get_target_ip(target) + ' HA failed'
+                      target + '|' + self.get_target_ip(target) + ' HA FAILED'
         last_occurrence = datetime.datetime.utcnow().\
             strftime('%m/%d/%Y %H:%M:%S')
         status = 1
