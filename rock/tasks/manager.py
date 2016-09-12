@@ -39,7 +39,7 @@ def get_tasks_objects(task_cls_name):
 def get_tasks_cls_name(tasks):
     result = []
     for task in tasks:
-        task_name = 'rock.tasks.' + task
+        task_name = 'rock.tasks.' + task + '.'
         cls_name = task.split('_')
         for word in cls_name:
             task_name += (word[0].upper() + word[1:])
