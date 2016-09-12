@@ -43,6 +43,12 @@ activemq_opts = [
         'server_port',
         default=61613,
         help='the port of of activemq server'),
+    cfg.StrOpt(
+        'destination',
+        default='eventQueue',
+        help='the queue or topic name of activemq '
+             'where the message reported to'
+    )
 ]
 
 CONF.register_group(activemq_group)
@@ -68,11 +74,13 @@ class ConnectionListener(stomp.ConnectionListener):
 
 
 class MessageReport(BaseTask):
-    def execute(self, message_body, message_destination='/queue/eventQueue',
+    def execute(self, message_body, message_destination=None,
                 message_content_type=None, message_headers={},
                 message_keyword_headers={}):
 
-        host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port),]
+        host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
+        if message_destination is None:
+            message_destination = '/queue/' + CONF.activemq.destination
         connection = stomp.Connection(host_and_port)
         connection.set_listener(
             'activemq_connection_listener', ConnectionListener())
