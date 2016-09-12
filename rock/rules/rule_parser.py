@@ -152,9 +152,7 @@ class RuleParser(object):
                 store_spec = {'task_uuid': task_uuid,
                               'target': target}
                 for task in actions:
-                    class_name = ACTION_ALIAS[task[0]]
-                    task_cls = importutils.import_class(class_name)
-                    tasks.append(task_cls())
+                    tasks.append(task[0])
                     for input_params in task[1:]:
                         input_kv = input_params.split(':')
                         store_spec[input_kv[0]] = input_kv[1]
