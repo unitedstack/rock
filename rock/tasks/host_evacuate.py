@@ -26,9 +26,10 @@ def register_host_mgmt_ping(conf):
 
     if getattr(conf, 'host_mgmt_ping', None) is None:
         conf.register_group(host_mgmt_ping_group)
+        conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
     else:
         if getattr(conf.host_mgmt_ping, 'ip_hostname_map', None) is None:
-            CONF.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
+            conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
 
 register_host_mgmt_ping(CONF)
 
@@ -207,7 +208,7 @@ class HostEvacuate(BaseTask, NovaAction):
 
     @staticmethod
     def get_target_ip(target):
-        for ip, hostname in CONF.host_mgmt_ping.ip_hostname_map:
+        for ip, hostname in CONF.host_mgmt_ping.ip_hostname_map.items():
             if target == hostname:
                 return ip
         return 'none'
