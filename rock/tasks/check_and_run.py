@@ -18,7 +18,7 @@ def check_and_run():
     if sql_exec.flowdetails is None:
         return 
     
-    if sql_exec.flowdetails[5] != 'SUCCESS':
+    if sql_exec.flowdetails[5] != u'SUCCESS':
         book_id = sql_exec.flowdetails[2]
         flow_id = sql_exec.flowdetails[6]
 
