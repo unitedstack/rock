@@ -32,18 +32,6 @@ LOG = logging.getLogger(__name__)
 CONF = dict(connection=cfg.CONF.database.connection)
 
 
-def get_tasks_cls_name(tasks):
-    result = []
-    for task in tasks:
-        task_module_str = task.__module__
-        module_name = task_module_str.split('.')[-1]
-        cls_name = ''
-        for i in module_name.split('_'):
-            cls_name += (i[0].upper() + i[1:])
-        result.append(task_module_str + '.' + cls_name)
-    return result
-
-
 def get_tasks_objects(task_cls_name):
     result = []
     for i in task_cls_name:
@@ -51,11 +39,22 @@ def get_tasks_objects(task_cls_name):
     return result
 
 
-def create_flow(flow_name, tasks_cls_name):
+def get_tasks_cls_name(tasks):
+    result = []
+    for task in tasks:
+        task_name = 'rock.tasks.' + task
+        cls_name = task.split('_')
+        for word in cls_name:
+            task_name += (word[0].upper() + word[1:])
+        result.append(task_name)
+    return result
+
+
+def create_flow(flow_name, tasks):
     task_flow = linear_flow.Flow(flow_name)
-    tasks = get_tasks_objects(tasks_cls_name)
+    task_cls_name = get_tasks_cls_name(tasks)
     task_flow.add(
-        *tasks
+        *get_tasks_objects(task_cls_name)
     )
 
     return task_flow
@@ -73,10 +72,9 @@ def run_flow(flow_name, store_spec, tasks):
     
     #   with contextlib.closing(backend.get_connection()) as conn:
     #   conn.save_logbook(book)
-    tasks_cls_name = get_tasks_cls_name(tasks)
     # Now load (but do not run) the flow using the provided initial data.
     flow_engine = taskflow.engines.load_from_factory(create_flow,
-                                                     factory_args=(flow_name, tasks_cls_name),
+                                                     factory_args=(flow_name, tasks),
                                                      store=store_spec,
                                                      backend=backend,
                                                      book=None,

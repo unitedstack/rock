@@ -22,6 +22,9 @@ def check_and_run():
         book_id = sql_exec.flowdetails[2]
         flow_id = sql_exec.flowdetails[6]
 
+    else:
+        return
+
     if all([book_id, flow_id]):
         try:
             with contextlib.closing(backend.get_connection()) as conn:
