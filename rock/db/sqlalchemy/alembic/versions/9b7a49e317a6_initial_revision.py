@@ -51,7 +51,8 @@ def upgrade():
         sa.Column("target", sa.String(length=36), nullable=False),
         sa.Column("result", sa.Boolean(), nullable=False),
         sa.Column("service_status", sa.Boolean(), nullable=False),
-        sa.Column("service_state", sa.Boolean(), nullable=False)
+        sa.Column("service_state", sa.Boolean(), nullable=False),
+        sa.Column("disabled_reason", sa.String(length=255), nullable=True)
 
     )
     op.create_table(
@@ -82,7 +83,7 @@ def upgrade():
                   nullable=True),
         sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
                   sa.ForeignKey('logbooks.uuid',
-                             ondelete='CASCADE')),
+                                ondelete='CASCADE')),
         sa.Column('meta', su.JSONType),
         sa.Column('name', sa.String(length=NAME_LENGTH)),
         sa.Column('state', sa.String(length=STATE_LENGTH)),
@@ -103,7 +104,7 @@ def upgrade():
                   nullable=True),
         sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
                   sa.ForeignKey('flowdetails.uuid',
-                             ondelete='CASCADE')),
+                                ondelete='CASCADE')),
         sa.Column('meta', su.JSONType),
         sa.Column('name', sa.String(length=NAME_LENGTH)),
         sa.Column('version', sa.String(length=VERSION_LENGTH)),
@@ -116,10 +117,11 @@ def upgrade():
         sa.Column('revert_results', su.JSONType),
         sa.Column('revert_failure', su.JSONType),
         sa.Column('atom_type', sa.Enum(*models.ATOM_TYPES,
-                                    name='atom_types')),
+                                       name='atom_types')),
         sa.Column('intention', sa.Enum(*states.INTENTIONS,
-                                                 name='intentions'))
+                                       name='intentions'))
     )
+
 
 def downgrade():
     op.drop_table('ping')

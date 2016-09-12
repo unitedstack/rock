@@ -5,18 +5,17 @@ from oslo_log import log as logging
 LOG = logging.getLogger(__name__)
 
 
-class ServerEvacuate(BaseTask,NovaAction):
+class ServerEvacuate(BaseTask, NovaAction):
 
     def execute(self, server, on_shared_storage=True):
 
         success = False
-        error_message = ""
         n_client = self._get_client()
         try:
             LOG.info("Resurrecting instance: %s" % server)
             (response, dictionary) = n_client.servers.evacuate(
                 on_shared_storage=on_shared_storage,
-                server = server)
+                server=server)
 
             if response is None:
                 res_message = "No response while evacuating instance"
@@ -32,5 +31,5 @@ class ServerEvacuate(BaseTask,NovaAction):
         return {
             "uuid": server,
             "accepted": success,
-            "reason": error_message,
+            "reason": res_message,
         }

@@ -5,11 +5,13 @@ from taskflow.engines.helpers import load_from_detail
 import contextlib
 from taskflow.persistence.backends import impl_sqlalchemy
 from oslo_config import cfg
+from taskflow import exceptions as exc
 import sql_exec
 LOG = logging.getLogger(__name__)
 
 
 CONF = dict(connection=cfg.CONF.database.connection)
+
 
 def check_and_run():
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
@@ -20,7 +22,7 @@ def check_and_run():
         book_id = sql_exec.flowdetails[2]
         flow_id = sql_exec.flowdetails[6]
 
-    if all([book_id,flow_id]):
+    if all([book_id, flow_id]):
         try:
             with contextlib.closing(backend.get_connection()) as conn:
                 lb = conn.get_logbook(book_id)
@@ -36,4 +38,3 @@ def check_and_run():
     with flow_utils.DynamicLogListener(flow_engine, logger=LOG):
         flow_engine.run()
         LOG.info("The previously partially completed flow is finished.")
-

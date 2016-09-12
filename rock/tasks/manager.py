@@ -31,6 +31,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = dict(connection=cfg.CONF.database.connection)
 
+
 def get_tasks_cls_name(tasks):
     result = []
     for task in tasks:
@@ -42,11 +43,13 @@ def get_tasks_cls_name(tasks):
         result.append(task_module_str + '.' + cls_name)
     return result
 
+
 def get_tasks_objects(task_cls_name):
     result = []
     for i in task_cls_name:
         result.append(importutils.import_class(i)())
     return result
+
 
 def create_flow(flow_name, tasks_cls_name):
     task_flow = linear_flow.Flow(flow_name)
@@ -57,26 +60,27 @@ def create_flow(flow_name, tasks_cls_name):
 
     return task_flow
 
-def run_flow(flow_name,store_spec,tasks):
+
+def run_flow(flow_name, store_spec, tasks):
     """Constructs and run a task flow.
     """
 
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
-    book_id = None
-    flow_id = None
+    #   book_id = None
+    #   flow_id = None
    
-    #book = models.LogBook(flow_name)
+    #   book = models.LogBook(flow_name)
     
-    #with contextlib.closing(backend.get_connection()) as conn:
-    #    conn.save_logbook(book)
+    #   with contextlib.closing(backend.get_connection()) as conn:
+    #   conn.save_logbook(book)
     tasks_cls_name = get_tasks_cls_name(tasks)
     # Now load (but do not run) the flow using the provided initial data.
     flow_engine = taskflow.engines.load_from_factory(create_flow,
-                                                    factory_args=(flow_name, tasks_cls_name),
-                                                    store=store_spec,
-                                                    backend=backend,
-                                                    book=None,
-                                                    engine='serial')
+                                                     factory_args=(flow_name, tasks_cls_name),
+                                                     store=store_spec,
+                                                     backend=backend,
+                                                     book=None,
+                                                     engine='serial')
 
     with flow_utils.DynamicLogListener(flow_engine, logger=LOG):
         flow_engine.run()
