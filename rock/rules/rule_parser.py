@@ -147,9 +147,8 @@ class RuleParser(object):
 
                 LOG.info("Triggered action on %s.", target)
                 tasks = []
-                task_uuid = uuid.uuid4()
-                task_name = 'task-' + str(task_uuid)
-                store_spec = {'task_uuid': task_uuid,
+                task_uuid = str(uuid.uuid4())
+                store_spec = {'taskflow_uuid': task_uuid,
                               'target': target}
                 for task in actions:
                     tasks.append(task[0])
@@ -157,7 +156,7 @@ class RuleParser(object):
                         input_kv = input_params.split(':')
                         store_spec[input_kv[0]] = input_kv[1]
 
-                run_flow(task_name, store_spec, tasks)
+                run_flow(task_uuid, store_spec, tasks)
 
     def _calculate(self, rule, funcs):
         def _recurse_calc(arg):
