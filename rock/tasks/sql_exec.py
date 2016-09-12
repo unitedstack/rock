@@ -20,11 +20,15 @@ database_opts = [
 
 if getattr(CONF, 'database', None) is None:
     CONF.register_group(database_group)
+    CONF.register_opts(database_opts, database_group)
+
 else:
-    if getattr(CONF.database, 'host', None) is None \
-            and getattr(CONF.database, 'user', None) is None \
-            and getattr(CONF.database, 'passwd', None) is None:
-        CONF.register_opts(database_opts, database_group)
+    if getattr(CONF.database, 'host', None) is None:
+        CONF.register_opt(cfg.StrOpt('host', default='127.0.0.1'), group=database_group)
+    if getattr(CONF.database, 'user', None) is None:
+        CONF.register_opt(cfg.StrOpt('user', default='root'), group=database_group)
+    if getattr(CONF.database, 'passwd', None) is None:
+        CONF.register_opt(cfg.StrOpt('passwd', default='admin'), group=database_group)
 
 CONF(default_config_files=['/etc/rock/rock.ini'])
 

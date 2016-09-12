@@ -13,17 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
 from oslo_log import log as logging
 import taskflow.engines
 from taskflow.patterns import linear_flow
 import flow_utils
-from taskflow.persistence import models 
-from oslo_utils import uuidutils
+from taskflow.persistence import models
 import contextlib
 from taskflow.persistence.backends import impl_sqlalchemy
 from oslo_config import cfg
-import sql_exec
 from oslo_utils import importutils
 
 LOG = logging.getLogger(__name__)
@@ -65,13 +62,11 @@ def run_flow(flow_name, store_spec, tasks):
     """
 
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
-    #   book_id = None
-    #   flow_id = None
    
-    #   book = models.LogBook(flow_name)
+    book = models.LogBook(flow_name)
     
-    #   with contextlib.closing(backend.get_connection()) as conn:
-    #   conn.save_logbook(book)
+    with contextlib.closing(backend.get_connection()) as conn:
+        conn.save_logbook(book)
     # Now load (but do not run) the flow using the provided initial data.
     flow_engine = taskflow.engines.load_from_factory(create_flow,
                                                      factory_args=(flow_name, tasks),
