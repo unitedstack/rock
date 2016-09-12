@@ -34,8 +34,7 @@ CONF.register_opts(openstack_credential_opts, openstack_credential_group)
 
 
 class NovaAction():
-
-    @staticmethod
+    
     def _get_client(self):
         """Get a nova client"""
 
