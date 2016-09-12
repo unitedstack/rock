@@ -40,14 +40,6 @@ def data_get_by_obj_time(obj_name, delta):
                                      sort_key='created_at')
 
 
-ACTION_ALIAS = {
-    'power_operation': 'rock.tasks.power_manager.PowerManager',
-    'host_evacuate': 'rock.tasks.host_evacuate.HostEvacuate',
-    'host_disable': 'rock.tasks.host_disable.HostDisable',
-    'message_report': 'rock.tasks.message_report.MessageReport'
-}
-
-
 class RuleParser(object):
     def __init__(self, rule):
         if isinstance(rule, basestring):

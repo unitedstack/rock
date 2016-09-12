@@ -48,7 +48,7 @@
             ]
         ],
         "tasks": [
-            ["power_operation"],
+            ["power_manager"],
             ["host_evacuate"],
             ["host_disable", "disabled_reason:host_down_disable"],
             ["message_report", "message_destination:/queue/eventQueue"]
