@@ -117,6 +117,7 @@ class HostEvacuate(BaseTask, NovaAction):
     @staticmethod
     def check_evacuate_status(n_client, vms_uuid, vm_origin_host,
                               check_times=6, time_delta=15):
+        LOG.info("Checking evacuate status.")
         continue_flag = True
         for i in range(check_times):
             if continue_flag:
