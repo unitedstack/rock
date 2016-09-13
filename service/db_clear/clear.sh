@@ -8,6 +8,6 @@ tables=`cat $tables`
 db=rock_history
 for x in $tables
 do
-   echo "table: $x"
+   # echo "table: $x"
    mysql $db -e "delete from $x where created_at < '$month'" 2>>$path/log.txt
 done
