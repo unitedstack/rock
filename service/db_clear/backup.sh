@@ -1,7 +1,7 @@
 #!/bin/bash
 
 path='/root/lsj'
-today=`date -u -d "+%Y-%m-%d %H:%M:%S"`
+today=`date -u  "+%Y-%m-%d %H:%M:%S"`
 tables="$path/tables.txt"
 
 #echo "backup today:$today" >> $path/log.txt
