@@ -24,7 +24,12 @@ LOG = logging.getLogger(__name__)
 
 class HostDisable(BaseTask, NovaAction):
 
-    def execute(self, target, disabled_reason):
+    default_provides = "host_disable_result"
+
+    def execute(self, target, disabled_reason, host_evacuate_result):
+        if not host_evacuate_result:
+            return False
+
         n_client = self._get_client()
 
         response = n_client.services.disable_log_reason(
@@ -36,5 +41,7 @@ class HostDisable(BaseTask, NovaAction):
 
         if response.status == 'disabled':
             LOG.info("Host %s disabled successfully.", target)
+            return True
         else:
             LOG.error("Host %s disabled failed, reason %s.", target, response)
+            return False

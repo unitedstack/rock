@@ -4,10 +4,10 @@ import json
 import time
 
 from oslo_config import cfg
-from oslo_log import log as logging
 
 from actions import NovaAction
 from flow_utils import BaseTask
+from oslo_log import log as logging
 from server_evacuate import ServerEvacuate
 
 LOG = logging.getLogger(__name__)
@@ -19,9 +19,9 @@ def register_host_mgmt_ping(conf):
         cfg.OptGroup(name='host_mgmt_ping',
                      title="Opts about host management IP ping delay")
     host_mgmt_ping_opts = [
-        cfg.DictOpt('ip_hostname_map',
-                    default={},
-                    help="IP addresses map to hostname"),
+        cfg.DictOpt(
+            'ip_hostname_map', default={},
+            help="IP addresses map to hostname"),
     ]
 
     if getattr(conf, 'host_mgmt_ping', None) is None:
@@ -31,14 +31,15 @@ def register_host_mgmt_ping(conf):
         if getattr(conf.host_mgmt_ping, 'ip_hostname_map', None) is None:
             conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
 
+
 register_host_mgmt_ping(CONF)
 
 
 class HostEvacuate(BaseTask, NovaAction):
 
-    default_provides = 'message_body'
+    default_provides = ('message_body', 'host_evacuate_result')
 
-    def execute(self, target, taskflow_uuid):
+    def execute(self, target, taskflow_uuid, host_power_off_result):
         n_client = self._get_client()
         servers, servers_id = self.get_servers(n_client, target)
 
@@ -47,9 +48,9 @@ class HostEvacuate(BaseTask, NovaAction):
 
         # 1. Check nova compute state of target
         nova_compute_state = self.check_nova_compute_state(n_client, target)
-        if not nova_compute_state:
-            return self.get_evacuate_results(n_client, servers_id,
-                                             target, taskflow_uuid)
+        if not nova_compute_state or not host_power_off_result:
+            return self.get_evacuate_results(n_client, servers_id, target,
+                                             taskflow_uuid), False
 
         # 2. Evacuate servers on the target
         self.evacuate_servers(servers)
@@ -58,17 +59,15 @@ class HostEvacuate(BaseTask, NovaAction):
         # it will return, otherwise it will wait check_times * time_delta.
         self.check_evacuate_status(n_client, servers_id, target)
 
-        return self.get_evacuate_results(n_client, servers_id,
-                                         target, taskflow_uuid)
+        return self.get_evacuate_results(n_client, servers_id, target,
+                                         taskflow_uuid), True
 
     @staticmethod
     def get_servers(n_client, host):
-        servers = n_client.servers.list(
-            search_opts={
-                'host': host,
-                'all_tenants': 1
-            }
-        )
+        servers = n_client.servers.list(search_opts={
+            'host': host,
+            'all_tenants': 1
+        })
         servers_id = []
         for server in servers:
             servers_id.append(server.id)
@@ -87,21 +86,19 @@ class HostEvacuate(BaseTask, NovaAction):
                     LOG.error("Request to evacuate server: %s failed" %
                               server.id)
             else:
-                LOG.error("Could not evacuate instance: %s" %
-                          server.to_dict())
+                LOG.error("Could not evacuate instance: %s" % server.to_dict())
 
     @staticmethod
     def force_down_nova_compute(n_client, host):
         n_client.services.force_down(host=host, binary='nova-compute')
 
     @staticmethod
-    def check_nova_compute_state(n_client, host,
-                                 check_times=20, time_delta=5):
+    def check_nova_compute_state(n_client, host, check_times=20, time_delta=5):
         LOG.info("Checking nova compute state of host %s , ensure it is"
                  " in state 'down'." % host)
         for t in range(check_times):
-            nova_compute = n_client.services.list(host=host,
-                                                  binary='nova-compute')
+            nova_compute = n_client.services.list(
+                host=host, binary='nova-compute')
             state = nova_compute[0].state
             if state == u'up':
                 LOG.warning("Nova compute of host %s is up, waiting it"
@@ -115,8 +112,11 @@ class HostEvacuate(BaseTask, NovaAction):
         return False
 
     @staticmethod
-    def check_evacuate_status(n_client, vms_uuid, vm_origin_host,
-                              check_times=6, time_delta=15):
+    def check_evacuate_status(n_client,
+                              vms_uuid,
+                              vm_origin_host,
+                              check_times=6,
+                              time_delta=15):
         LOG.info("Checking evacuate status.")
         continue_flag = True
         for i in range(check_times):
@@ -136,8 +136,8 @@ class HostEvacuate(BaseTask, NovaAction):
             else:
                 break
 
-    def get_evacuate_results(self, n_client, vms_uuid,
-                             vm_origin_host, taskflow_uuid):
+    def get_evacuate_results(self, n_client, vms_uuid, vm_origin_host,
+                             taskflow_uuid):
         results = []
         for vm_id in vms_uuid:
             vm = n_client.servers.get(vm_id)
@@ -145,24 +145,22 @@ class HostEvacuate(BaseTask, NovaAction):
             vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
 
             if (vm_task_state is None) and \
-                     (vm_host != unicode(vm_origin_host)):
+                    (vm_host != unicode(vm_origin_host)):
 
                 results.append(
-                    self.make_vm_evacuate_result(vm, True,
-                                                 taskflow_uuid))
+                    self.make_vm_evacuate_result(vm, True, taskflow_uuid))
 
-                LOG.info("Successfully evacuate server: %s, origin_host: %s"
-                         ", current_host: %s"
-                         % (vm.id, vm_origin_host, vm_host))
+                LOG.info("Successfully evacuated server: %s, origin_host: %s"
+                         ", current_host: %s" %
+                         (vm.id, vm_origin_host, vm_host))
 
             else:
                 results.append(
-                    self.make_vm_evacuate_result(vm, False,
-                                                 taskflow_uuid))
+                    self.make_vm_evacuate_result(vm, False, taskflow_uuid))
 
                 LOG.warning("Failed evacuate server: %s, origin_host: %s"
-                            "vm_task_state: %s"
-                            % (vm.id, vm_origin_host, vm_task_state))
+                            "vm_task_state: %s" %
+                            (vm.id, vm_origin_host, vm_task_state))
         return results
 
     def make_vm_evacuate_result(self, vm, success, taskflow_uuid):
@@ -185,15 +183,15 @@ class HostEvacuate(BaseTask, NovaAction):
         source_severity = 'INFO'
 
         single_result = {
-                'Severity': severity,
-                'Summary': summary,
-                'LastOccurrence': last_occurrence,
-                'Status': status,
-                'SourceID': source_id,
-                'SourceEventID': source_event_id,
-                'SourceCIName': source_ci_name,
-                'SourceAlertKey': source_alert_key,
-                "SourceSeverity": source_severity
+            'Severity': severity,
+            'Summary': summary,
+            'LastOccurrence': last_occurrence,
+            'Status': status,
+            'SourceID': source_id,
+            'SourceEventID': source_event_id,
+            'SourceCIName': source_ci_name,
+            'SourceAlertKey': source_alert_key,
+            'SourceSeverity': source_severity
         }
 
         return json.dumps(single_result)
@@ -203,7 +201,7 @@ class HostEvacuate(BaseTask, NovaAction):
         vm_ip = ''
         for k, v in vm.networks.items():
             for ip in v:
-                vm_ip += str(ip)+','
+                vm_ip += str(ip) + ','
         ip = vm_ip.rstrip(',')
         return ip
 
