@@ -1,6 +1,6 @@
 #!/bin/bash
 
-path="/root/lsj"
+path="/usr/local/bin"
 month=`date -u  "+%Y-%m-%d %H:%M:%S"`
 tables="$path/tables.txt"
 
