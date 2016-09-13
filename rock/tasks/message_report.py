@@ -14,13 +14,12 @@
 #    under the License.
 
 import time
-import stomp
 
-from oslo_log import log as logging
+import stomp
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from flow_utils import BaseTask
-
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -76,7 +75,7 @@ class ConnectionListener(stomp.ConnectionListener):
 class MessageReport(BaseTask):
     def execute(self, message_body, message_destination=None,
                 message_content_type=None, message_headers={},
-                message_keyword_headers={}):
+                message_keyword_headers={}, activemq_error_allowed=True):
 
         host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
         if message_destination is None:
@@ -84,16 +83,22 @@ class MessageReport(BaseTask):
         connection = stomp.Connection(host_and_port)
         connection.set_listener(
             'activemq_connection_listener', ConnectionListener())
-        connection.start()
-        connection.connect(
-            username=CONF.activemq.username,
-            passcode=CONF.activemq.password, wait=True)
-        for message in message_body:
-            connection.send(
+        try:
+            connection.start()
+            connection.connect(
+                username=CONF.activemq.username,
+                passcode=CONF.activemq.password, wait=True)
+            for message in message_body:
+                connection.send(
                     destination=message_destination,
                     body=message,
                     content_type=message_content_type,
                     headers=message_headers,
                     keyword_headers=message_keyword_headers)
-        time.sleep(1)
-        connection.disconnect()
+            time.sleep(1)
+            connection.disconnect()
+        except Exception as err:
+            if activemq_error_allowed:
+                LOG.error("Activemq error: %s" % err.message)
+            else:
+                raise err
