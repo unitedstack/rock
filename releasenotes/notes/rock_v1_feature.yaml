@@ -1,0 +1,10 @@
+---
+
+  rock 1.0 version   9/2/2016
+  Feature:
+  
+    Add action to check the management network connectivity and nova-compute service state
+    Add calculate and judge action to choose suitable tasks to handler the problems which has been checked.
+    Add IPMI manager task to do remote operation for the power status of the host .
+    Add host evacuate task to evacuate servers in failed host to a new host.
+    Add tasks into a taskflow in order to make task execution easy, consistent and reliable.
