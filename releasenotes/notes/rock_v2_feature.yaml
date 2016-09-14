@@ -1,0 +1,10 @@
+---
+
+  rock 2.0 version   9/14/2016
+  Feature:
+  
+    Add a task after server evacuate action to disable nova-compute service, making host to be in maintaining state.
+    Add a task in the end of taskflow to monitor the flow and  trigger alarm.
+    Do some works to make taskflow supports persistence, so once again trigger rock-engine, flow can continue running from breakpoint.
+    Add a crontab to clean the data in database, in case of disks have not enough space.
+    Add timeout mechanism in host evacuate task , in case of taskflow always in waiting state.
