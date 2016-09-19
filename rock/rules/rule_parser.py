@@ -134,6 +134,8 @@ class RuleParser(object):
                         rule, self.target_data[target])
                     if not self._calculate(rule, funcs):
                         filter_flag = True
+                        LOG.info('Skipped target %s due to filter %s.',
+                                 target, each_filter)
                 if filter_flag:
                     continue
 

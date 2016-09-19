@@ -9,7 +9,8 @@
     "l1_rule": [
         "%or",
         "$service_result.judge_result",
-        "$ping_result.judge_result"
+        "$ping_result.judge_result",
+        ["%not", "$service_result.service_status"]
     ],
     "l2_rule": [
         "%and",
@@ -37,7 +38,7 @@
                 "map_result",
                 true
             ],
-        2]
+        1]
     ],
     "action": {
         "filters": [
