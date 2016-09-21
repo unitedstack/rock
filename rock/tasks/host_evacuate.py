@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import json
 import time
@@ -14,7 +13,7 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def register_host_mgmt_ping(conf):
+def register_conf(conf):
     host_mgmt_ping_group = \
         cfg.OptGroup(name='host_mgmt_ping',
                      title="Opts about host management IP ping delay")
@@ -24,6 +23,20 @@ def register_host_mgmt_ping(conf):
             help="IP addresses map to hostname"),
     ]
 
+    host_evacuate_group = cfg.OptGroup(
+        name='host_evacuate', title='Opts for host evacuate')
+    host_evacuate_opts = [
+        cfg.IntOpt(
+            'check_times',
+            default=6,
+            help="how many times to check the evacuated server's status"),
+        cfg.IntOpt(
+            'check_interval', default=15, help='check interval')
+    ]
+
+    conf.register_group(host_evacuate_group)
+    conf.register_opts(host_evacuate_opts, host_evacuate_group)
+
     if getattr(conf, 'host_mgmt_ping', None) is None:
         conf.register_group(host_mgmt_ping_group)
         conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
@@ -32,7 +45,7 @@ def register_host_mgmt_ping(conf):
             conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
 
 
-register_host_mgmt_ping(CONF)
+register_conf(CONF)
 
 
 class HostEvacuate(BaseTask, NovaAction):
@@ -57,7 +70,12 @@ class HostEvacuate(BaseTask, NovaAction):
 
         # 3. Check evacuate status, while all servers successfully evacuated,
         # it will return, otherwise it will wait check_times * time_delta.
-        self.check_evacuate_status(n_client, servers_id, target)
+        self.check_evacuate_status(
+            n_client,
+            servers_id,
+            target,
+            check_times=CONF.host_evacuate.check_times,
+            time_delta=CONF.host_evacuate.check_interval)
 
         return self.get_evacuate_results(n_client, servers_id, target,
                                          taskflow_uuid), True
@@ -117,7 +135,9 @@ class HostEvacuate(BaseTask, NovaAction):
                               vm_origin_host,
                               check_times=6,
                               time_delta=15):
-        LOG.info("Checking evacuate status.")
+        LOG.info(
+            "Checking evacuate status. Check times: %s, check interval: %ss." %
+            (check_times, time_delta))
         continue_flag = True
         for i in range(check_times):
             if continue_flag:
@@ -158,9 +178,10 @@ class HostEvacuate(BaseTask, NovaAction):
                 results.append(
                     self.make_vm_evacuate_result(vm, False, taskflow_uuid))
 
-                LOG.warning("Failed evacuate server: %s, origin_host: %s"
-                            "vm_task_state: %s" %
-                            (vm.id, vm_origin_host, vm_task_state))
+                LOG.warning(
+                    "Failed evacuate server: %s, origin_host: %s, "
+                    "current_host: %s, vm_task_state: %s" %
+                    (vm.id, vm_origin_host, vm_host, vm_task_state))
         return results
 
     def make_vm_evacuate_result(self, vm, success, taskflow_uuid):

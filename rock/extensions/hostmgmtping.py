@@ -13,27 +13,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
 import commands
-from eventlet.queue import LightQueue
 
 from oslo_config import cfg
 
-from rock import extension_manager
-from rock.db.sqlalchemy.model_ping import ModelPing
+from rock.extension_manager import ExtensionDescriptor
 from rock.db import api as db_api
+from rock.db.sqlalchemy.model_ping import ModelPing
 
-host_mgmt_ping_opts_group = cfg.OptGroup(name='host_mgmt_ping',
-    title="Opts about host management IP ping delay")
+host_mgmt_ping_opts_group = cfg.OptGroup(
+    name='host_mgmt_ping', title="Opts about host management IP ping delay")
 
 host_mgmt_ping_opts = [
-    cfg.ListOpt('target_addresses',
-                default=["127.0.0.1"],
-                help="IP address or hostname of target, hostname should be" +
-                "pingable directly."),
-    cfg.DictOpt('ip_hostname_map',
-                default={},
-                help="IP addresses map to hostname"),
+    cfg.ListOpt(
+        'target_addresses',
+        default=["127.0.0.1"],
+        help="IP address or hostname of target, hostname should be" +
+        "pingable directly."),
+    cfg.DictOpt(
+        'ip_hostname_map', default={}, help="IP addresses map to hostname"),
 ]
 
 CONF = cfg.CONF
@@ -41,13 +39,11 @@ CONF.register_group(host_mgmt_ping_opts_group)
 CONF.register_opts(host_mgmt_ping_opts, host_mgmt_ping_opts_group)
 
 
-class Hostmgmtping(extension_manager.ExtensionDescriptor):
+class Hostmgmtping(ExtensionDescriptor):
     """Ping to management IP of host extension."""
 
     def __init__(self):
         super(Hostmgmtping, self).__init__()
-        self.queue = LightQueue(100)
-        self.pool = eventlet.GreenPool(2)
         self.targets = CONF.host_mgmt_ping.target_addresses
         self.targets_hostname = CONF.host_mgmt_ping.ip_hostname_map
 
@@ -63,12 +59,9 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
     def get_description(cls):
         return "Delay of ping to management IP of host."
 
+    @ExtensionDescriptor.period_decorator(10)
     def periodic_task(self):
-        self.pool.spawn(self.producer)
-        self.pool.spawn(self.consumer)
-
-    def producer(self):
-        result = {}
+        data = {}
         for target in self.targets:
             # Send 3 packets one time and each packet timeout is 3000ms,
             # interval between 3 packets is 0.3s, and the ping process
@@ -76,21 +69,19 @@ class Hostmgmtping(extension_manager.ExtensionDescriptor):
             cmd = "ping -c 3 -t 4 -W 3 -i 0.3 %s" % target
             status, output = commands.getstatusoutput(cmd)
             if status == 0:
-                result[self.targets_hostname[target]] = \
-                            output.split('\n')[-1].split('/')[-3]
+                data[self.targets_hostname[target]] = \
+                    output.split('\n')[-1].split('/')[-3]
             else:
-                result[self.targets_hostname[target]] = '9999'
-        self.queue.put(result, block=False, timeout=3)
-
-    def consumer(self):
-        result = self.queue.get(block=False, timeout=3)
-        ping_objs = self.get_models(result)
+                data[self.targets_hostname[target]] = '9999'
+        ping_objs = self.get_models(data)
         db_api.save_all(ping_objs)
 
-    def get_models(self,data):
+    def get_models(self, data):
         objs = []
         for key in data:
-            obj = ModelPing(target=key, delay=data[key],
-                    result=True if float(data[key]) < 3 else False)
+            obj = ModelPing(
+                target=key,
+                delay=data[key],
+                result=True if float(data[key]) < 3 else False)
             objs.append(obj)
         return objs

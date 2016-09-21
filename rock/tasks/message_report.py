@@ -46,8 +46,11 @@ activemq_opts = [
         'destination',
         default='eventQueue',
         help='the queue or topic name of activemq '
-             'where the message reported to'
-    )
+             'where the message reported to'),
+    cfg.BoolOpt(
+        'error_allowed',
+        default=True,
+        help='whether allow error when reporting a message to activemq')
 ]
 
 CONF.register_group(activemq_group)
@@ -75,7 +78,7 @@ class ConnectionListener(stomp.ConnectionListener):
 class MessageReport(BaseTask):
     def execute(self, message_body, message_destination=None,
                 message_content_type=None, message_headers={},
-                message_keyword_headers={}, activemq_error_allowed=True):
+                message_keyword_headers={}):
 
         host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
         if message_destination is None:
@@ -98,7 +101,7 @@ class MessageReport(BaseTask):
             time.sleep(1)
             connection.disconnect()
         except Exception as err:
-            if activemq_error_allowed:
+            if CONF.activemq.error_allowed:
                 LOG.error("Activemq error: %s" % err.message)
             else:
                 raise err

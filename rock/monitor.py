@@ -17,7 +17,6 @@ import os
 
 from oslo_utils import importutils
 from oslo_config import cfg
-from oslo_service import loopingcall
 from oslo_log import log as logging
 
 
@@ -41,15 +40,12 @@ def prepare_log():
 def main(manager='rock.extension_manager.ExtensionManager'):
     prepare_log()
     log = logging.getLogger(__name__)
-    log.info('Start rock moniter.')
+    log.info('Start rock monitor.')
     mgr_class = importutils.import_class(manager)
     file_path = os.path.abspath(__file__)
     file_dir = os.path.dirname(file_path)
     ext_mgr = mgr_class(file_dir+'/extensions')
-    p = loopingcall.FixedIntervalLoopingCall(ext_mgr.report_state_loop)
-    p.start(interval=4)
-    ext_mgr.after_start()
-    p.wait()
+    ext_mgr.start_collect_data()
 
 if __name__ == '__main__':
     main()
