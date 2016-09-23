@@ -15,6 +15,7 @@
 
 from sqlalchemy import Column
 from sqlalchemy import Float
+from sqlalchemy import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 from rock.db.sqlalchemy.model_base import ModelBase
@@ -27,5 +28,10 @@ class ModelPing(ModelBase, Base):
 
     __tablename__ = 'ping'
 
-    delay = Column(Float(), default=0.0)
+    management_ip_result = Column(Boolean(), nullable=True)
+    management_ip_delay = Column(Float(), nullable=True)
+    tunnel_ip_result = Column(Boolean(), nullable=True)
+    tunnel_ip_delay = Column(Float(), nullable=True)
+    storage_ip_result = Column(Boolean(), nullable=True)
+    storage_ip_delay = Column(Float(), nullable=True)
 

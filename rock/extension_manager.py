@@ -140,13 +140,12 @@ class ExtensionManager(object):
             raise exceptions.DuplicatedExtension(alias=alias)
         self.extensions[alias] = ext
 
-    @ExtensionDescriptor.period_decorator(30)
+    @ExtensionDescriptor.period_decorator(60)
     def report_status(self):
         current_thread_list = threading.enumerate()
         thread_name = []
         for thread in current_thread_list:
-            if thread.name != "MainThread" and \
-                    thread.name != 'Plugins-Thread-Status-Report':
+            if thread.name in self.extensions:
                 thread_name.append(thread.name)
         LOG.info("Current plugin threads: %s" % thread_name)
 
@@ -157,5 +156,5 @@ class ExtensionManager(object):
             t = threading.Thread(target=task, name=task_name)
             t.start()
         t = threading.Thread(
-            target=self.report_status, name='Plugins-Thread-Status-Report')
+            target=self.report_status, name='Plugins-Status-Report')
         t.start()

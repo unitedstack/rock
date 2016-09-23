@@ -12,14 +12,13 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+import sqlalchemy as sa
 from alembic import op
-import sqlalchemy  as sa
-from oslo_utils import timeutils
-from oslo_utils import uuidutils
-import sqlalchemy_utils as su
-from taskflow.persistence import models
-from taskflow import states
+from oslo_utils import timeutils, uuidutils
 
+import sqlalchemy_utils as su
+from taskflow import states
+from taskflow.persistence import models
 
 # Column length limits...
 NAME_LENGTH = 255
@@ -31,96 +30,142 @@ VERSION_LENGTH = 64
 def upgrade():
     op.create_table(
         "ping",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("created_at",
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=False),
-        sa.Column("target", sa.String(length=36), nullable=False),
-        sa.Column("result", sa.Boolean(), nullable=False),
-        sa.Column("delay", sa.Float(), default=0.0, nullable=False)
-    )
+        sa.Column(
+            "id", sa.Integer(), primary_key=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=False),
+        sa.Column(
+            "target", sa.String(length=36), nullable=False),
+        sa.Column(
+            "result", sa.Boolean(), nullable=False),
+        sa.Column(
+            "management_ip_result", sa.Boolean(), nullable=True),
+        sa.Column(
+            "management_ip_delay", sa.Float(), nullable=True),
+        sa.Column(
+            "tunnel_ip_result", sa.Boolean(), nullable=True),
+        sa.Column(
+            "tunnel_ip_delay", sa.Float(), nullable=True),
+        sa.Column(
+            "storage_ip_result", sa.Boolean(), nullable=True),
+        sa.Column(
+            "storage_ip_delay", sa.Float(), nullable=True))
 
     op.create_table(
         "nova_service",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("created_at",
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=False),
-        sa.Column("target", sa.String(length=36), nullable=False),
-        sa.Column("result", sa.Boolean(), nullable=False),
-        sa.Column("service_status", sa.Boolean(), nullable=False),
-        sa.Column("service_state", sa.Boolean(), nullable=False),
-        sa.Column("disabled_reason", sa.String(length=255), nullable=True)
-
-    )
+        sa.Column(
+            "id", sa.Integer(), primary_key=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=False),
+        sa.Column(
+            "target", sa.String(length=36), nullable=False),
+        sa.Column(
+            "result", sa.Boolean(), nullable=False),
+        sa.Column(
+            "service_status", sa.Boolean(), nullable=False),
+        sa.Column(
+            "service_state", sa.Boolean(), nullable=False),
+        sa.Column(
+            "disabled_reason", sa.String(length=255), nullable=True))
     op.create_table(
         "logbooks",
-        sa.Column('created_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
-        sa.Column('updated_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
+        sa.Column(
+            'created_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
+        sa.Column(
+            'updated_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
         sa.Column('meta', su.JSONType),
-        sa.Column('name', sa.String(length=NAME_LENGTH)),
-        sa.Column('uuid', sa.String(length=UUID_LENGTH),
-                  primary_key=True, nullable=False, unique=True,
-                  default=uuidutils.generate_uuid)
-    )
+        sa.Column(
+            'name', sa.String(length=NAME_LENGTH)),
+        sa.Column(
+            'uuid',
+            sa.String(length=UUID_LENGTH),
+            primary_key=True,
+            nullable=False,
+            unique=True,
+            default=uuidutils.generate_uuid))
     op.create_table(
         "flowdetails",
-        sa.Column('created_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
-        sa.Column('updated_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
-        sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
-                  sa.ForeignKey('logbooks.uuid',
-                                ondelete='CASCADE')),
+        sa.Column(
+            'created_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
+        sa.Column(
+            'updated_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
+        sa.Column(
+            'parent_uuid',
+            sa.String(length=UUID_LENGTH),
+            sa.ForeignKey(
+                'logbooks.uuid', ondelete='CASCADE')),
         sa.Column('meta', su.JSONType),
-        sa.Column('name', sa.String(length=NAME_LENGTH)),
-        sa.Column('state', sa.String(length=STATE_LENGTH)),
-        sa.Column('uuid', sa.String(length=UUID_LENGTH),
-                  primary_key=True, nullable=False, unique=True,
-                  default=uuidutils.generate_uuid)
-    )
+        sa.Column(
+            'name', sa.String(length=NAME_LENGTH)),
+        sa.Column(
+            'state', sa.String(length=STATE_LENGTH)),
+        sa.Column(
+            'uuid',
+            sa.String(length=UUID_LENGTH),
+            primary_key=True,
+            nullable=False,
+            unique=True,
+            default=uuidutils.generate_uuid))
 
     op.create_table(
         "atomdetails",
-        sa.Column('created_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
-        sa.Column('updated_at',
-                  sa.DateTime(),
-                  default=lambda: timeutils.utcnow(),
-                  nullable=True),
-        sa.Column('parent_uuid', sa.String(length=UUID_LENGTH),
-                  sa.ForeignKey('flowdetails.uuid',
-                                ondelete='CASCADE')),
+        sa.Column(
+            'created_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
+        sa.Column(
+            'updated_at',
+            sa.DateTime(),
+            default=lambda: timeutils.utcnow(),
+            nullable=True),
+        sa.Column(
+            'parent_uuid',
+            sa.String(length=UUID_LENGTH),
+            sa.ForeignKey(
+                'flowdetails.uuid', ondelete='CASCADE')),
         sa.Column('meta', su.JSONType),
-        sa.Column('name', sa.String(length=NAME_LENGTH)),
-        sa.Column('version', sa.String(length=VERSION_LENGTH)),
-        sa.Column('state', sa.String(length=STATE_LENGTH)),
-        sa.Column('uuid', sa.String(length=UUID_LENGTH),
-                  primary_key=True, nullable=False, unique=True,
-                  default=uuidutils.generate_uuid),
+        sa.Column(
+            'name', sa.String(length=NAME_LENGTH)),
+        sa.Column(
+            'version', sa.String(length=VERSION_LENGTH)),
+        sa.Column(
+            'state', sa.String(length=STATE_LENGTH)),
+        sa.Column(
+            'uuid',
+            sa.String(length=UUID_LENGTH),
+            primary_key=True,
+            nullable=False,
+            unique=True,
+            default=uuidutils.generate_uuid),
         sa.Column('failure', su.JSONType),
         sa.Column('results', su.JSONType),
         sa.Column('revert_results', su.JSONType),
         sa.Column('revert_failure', su.JSONType),
-        sa.Column('atom_type', sa.Enum(*models.ATOM_TYPES,
-                                       name='atom_types')),
-        sa.Column('intention', sa.Enum(*states.INTENTIONS,
-                                       name='intentions'))
-    )
+        sa.Column(
+            'atom_type', sa.Enum(
+                *models.ATOM_TYPES, name='atom_types')),
+        sa.Column(
+            'intention', sa.Enum(
+                *states.INTENTIONS, name='intentions')))
 
 
 def downgrade():

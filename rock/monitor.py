@@ -15,8 +15,9 @@
 
 import os
 
-from oslo_utils import importutils
 from oslo_config import cfg
+from oslo_utils import importutils
+
 from oslo_log import log as logging
 
 
@@ -44,8 +45,9 @@ def main(manager='rock.extension_manager.ExtensionManager'):
     mgr_class = importutils.import_class(manager)
     file_path = os.path.abspath(__file__)
     file_dir = os.path.dirname(file_path)
-    ext_mgr = mgr_class(file_dir+'/extensions')
+    ext_mgr = mgr_class(file_dir + '/extensions')
     ext_mgr.start_collect_data()
+
 
 if __name__ == '__main__':
     main()

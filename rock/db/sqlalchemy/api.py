@@ -111,7 +111,7 @@ class Connection(object):
                          order_by(desc(getattr(model, sort_key))).all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err)
+                LOG.error("Database exception: %" % err.message)
                 return []
         else:
             try:
@@ -119,21 +119,21 @@ class Connection(object):
                          order_by(getattr(model, sort_key)).all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err)
+                LOG.error("Database exception: %" % err.message)
                 return []
 
     def save(self, model_obj, session=get_session()):
         try:
             model_obj.save(session=session)
-        except Exception:
-            LOG.warning('Can not save db object: %r at %r' \
-                    %(model_obj.__class__, model_obj.created_at))
+        except Exception as e:
+            LOG.warning('Can not save db object: %r' \
+                    %(model_obj.__class__, e.message))
 
     @staticmethod
     def save_all(model_objs, session=get_session()):
         try:
             ModelBase.save_all(model_objs, session=session)
-        except Exception:
+        except Exception as e:
             LOG.warning('Can not save db object: %r at %r' \
-                    %(model_objs[0].__class__, model_objs[0].created_at))
+                    %(model_objs[0].__class__, e.message))
 
