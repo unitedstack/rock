@@ -34,4 +34,3 @@ class ModelPing(ModelBase, Base):
     tunnel_ip_delay = Column(Float(), nullable=True)
     storage_ip_result = Column(Boolean(), nullable=True)
     storage_ip_delay = Column(Float(), nullable=True)
-

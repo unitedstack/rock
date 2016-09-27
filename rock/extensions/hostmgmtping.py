@@ -61,7 +61,7 @@ class PingThread(threading.Thread):
 
     def run(self):
         global DATA_LIST
-        data = {}
+        data = dict()
         data['target'] = self.host_name
         data['result'] = False
         for ip_name, ip in self.host_ip_map.items():
@@ -143,7 +143,7 @@ class Hostmgmtping(ExtensionDescriptor):
     @ExtensionDescriptor.period_decorator(10)
     def periodic_task(self):
         current_thread_list = threading.enumerate()
-        current_thread_name_list = []
+        current_thread_name_list = list()
         current_thread_name_list.append(thread.name
                                         for thread in current_thread_list)
         for host_name, host_ip_map in self.host_ip_map.items():

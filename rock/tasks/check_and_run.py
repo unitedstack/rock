@@ -1,7 +1,6 @@
 from oslo_log import log as logging
 import taskflow.engines
 import flow_utils
-from taskflow.engines.helpers import load_from_detail
 import contextlib
 from taskflow.persistence.backends import impl_sqlalchemy
 from oslo_config import cfg
@@ -24,6 +23,8 @@ def check_and_run():
 
     else:
         return
+
+    flow_detail = None
 
     if all([book_id, flow_id]):
         try:

@@ -69,7 +69,8 @@ def run_flow(flow_name, store_spec, tasks):
         conn.save_logbook(book)
     # Now load (but do not run) the flow using the provided initial data.
     flow_engine = taskflow.engines.load_from_factory(create_flow,
-                                                     factory_args=(flow_name, tasks),
+                                                     factory_args=(flow_name,
+                                                                   tasks),
                                                      store=store_spec,
                                                      backend=backend,
                                                      book=None,

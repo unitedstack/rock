@@ -7,34 +7,31 @@ from sql_statement import *
 CONF = cfg.CONF
 database_group = cfg.OptGroup(
         'database',
-        title='database infomation.')
+        title='database parameters')
 
-database_opts = [
-    cfg.StrOpt('host',
-               default='127.0.0.1'),
-    cfg.StrOpt('user',
-               default='root'),
-    cfg.StrOpt('passwd',
-               default='admin'),
-]
+database_opt = cfg.StrOpt(
+    'connection',
+    help='Database connection string',
+)
 
 if getattr(CONF, 'database', None) is None:
     CONF.register_group(database_group)
-    CONF.register_opts(database_opts, database_group)
-
+    CONF.register_opt(database_opt, database_group)
 else:
-    if getattr(CONF.database, 'host', None) is None:
-        CONF.register_opt(cfg.StrOpt('host', default='127.0.0.1'), group=database_group)
-    if getattr(CONF.database, 'user', None) is None:
-        CONF.register_opt(cfg.StrOpt('user', default='root'), group=database_group)
-    if getattr(CONF.database, 'passwd', None) is None:
-        CONF.register_opt(cfg.StrOpt('passwd', default='admin'), group=database_group)
+    if getattr(CONF.database, 'connection', None) is None:
+        CONF.register_opt(database_opt, CONF.database)
 
 CONF(default_config_files=['/etc/rock/rock.ini'])
+conn_str = CONF.database.connection
+conn_str_dict = conn_str.split('/')[-2]
+user = conn_str_dict.split(':')[0]
+conn_str_dict_1 = conn_str_dict.split(':')[1]
+passwd = conn_str_dict_1.split('@')[0]
+host = conn_str_dict_1.split('@')[1]
 
-conn = MySQLdb.connect(host=CONF.database.host,
-                       user=CONF.database.user,
-                       passwd=CONF.database.passwd,
+conn = MySQLdb.connect(host=host,
+                       user=user,
+                       passwd=passwd,
                        db='rock',
                        charset='utf8')
 cursor = conn.cursor()

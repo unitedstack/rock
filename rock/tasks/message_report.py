@@ -46,13 +46,16 @@ activemq_opts = [
         'destination',
         default='eventQueue',
         help='the queue or topic name of activemq '
-             'where the message reported to'),
-    cfg.BoolOpt(
-        'error_allowed',
-        default=True,
-        help='whether allow error when reporting a message to activemq')
+             'where the message reported to')
 ]
 
+message_report_error_allowed_opt = \
+    cfg.BoolOpt('message_report_error_allowed',
+                default=True,
+                help='when failed to report evacuation message,'
+                     ' terminate rock-engine or not.')
+
+CONF.register_opt(message_report_error_allowed_opt)
 CONF.register_group(activemq_group)
 CONF.register_opts(activemq_opts, activemq_group)
 
@@ -77,9 +80,13 @@ class ConnectionListener(stomp.ConnectionListener):
 
 class MessageReport(BaseTask):
     def execute(self, message_body, message_destination=None,
-                message_content_type=None, message_headers={},
-                message_keyword_headers={}):
+                message_content_type=None, message_headers=None,
+                message_keyword_headers=None):
 
+        if message_headers is None:
+            message_headers = {}
+        if message_keyword_headers is None:
+            message_keyword_headers = {}
         host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
         if message_destination is None:
             message_destination = '/queue/' + CONF.activemq.destination
@@ -101,7 +108,7 @@ class MessageReport(BaseTask):
             time.sleep(1)
             connection.disconnect()
         except Exception as err:
-            if CONF.activemq.error_allowed:
+            if CONF.message_report_error_allowed:
                 LOG.error("Activemq error: %s" % err.message)
             else:
                 raise err

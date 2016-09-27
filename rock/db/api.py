@@ -22,8 +22,8 @@ from oslo_utils import timeutils
 
 _BACKEND_MAPPING = {'sqlalchemy': 'rock.db.sqlalchemy.api'}
 _IMPL = db_api.DBAPI.from_config(cfg.CONF,
-                                backend_mapping=_BACKEND_MAPPING,
-                                lazy=True)
+                                 backend_mapping=_BACKEND_MAPPING,
+                                 lazy=True)
 
 
 def get_instance():
@@ -35,6 +35,7 @@ def get_last_n_records(model, n, sort_key='id', sort_dir='desc'):
     """Get the last n records of a table.
 
     :param model: Model class.
+    :param n: number of results.
     :param sort_key: Used to sort the result.
     :param sort_dir: 'asc' or 'desc'.
     """
@@ -64,4 +65,3 @@ def save(model_obj):
 def save_all(model_objs):
     """Save many model objects at a time"""
     _IMPL.save_all(model_objs)
-

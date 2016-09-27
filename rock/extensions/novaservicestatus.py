@@ -64,10 +64,11 @@ class Novaservicestatus(ExtensionDescriptor):
         n_client = self._get_client()
         try:
             services = n_client.services.list()
-        except Exception as error:
-            LOG.error("NovaClientException: %s (HTTP %s)" % (error.message,
-                                                             error.code))
-            return
+        except Exception as err:
+            LOG.error("NovaClientException:")
+            LOG.error(*err.args)
+            LOG.error(err.message)
+            return None
         data = {}
         for service in services:
             if service.binary == u'nova-compute':

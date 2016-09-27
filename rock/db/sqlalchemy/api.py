@@ -18,7 +18,6 @@
 
 from oslo_config import cfg
 from oslo_db.sqlalchemy import session as db_session
-from oslo_utils import timeutils
 from oslo_log import log as logging
 from sqlalchemy import desc
 
@@ -56,7 +55,7 @@ def get_backend():
 def model_query(model, *args, **kwargs):
     """Query helper for simpler session usage.
 
-    :param session: if present, the session to use
+    :param model: model class of rock
     """
 
     session = kwargs.get('session') or get_session()
@@ -70,7 +69,8 @@ class Connection(object):
     def __init__(self):
         pass
 
-    def get_last_n_records(self, model, n, sort_key='id', sort_dir='desc'):
+    @staticmethod
+    def get_last_n_records(model, n, sort_key='id', sort_dir='desc'):
         query = model_query(model)
         query = query.order_by(desc(model.id))
         query = query.limit(n)
@@ -79,7 +79,7 @@ class Connection(object):
                 result = query.all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err)
+                LOG.error("Database exception: %s" % err.message)
                 return []
         else:
             try:
@@ -87,11 +87,11 @@ class Connection(object):
                          order_by(getattr(model, sort_key)).all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err)
+                LOG.error("Database exception: %s" % err.message)
                 return []
 
-    def get_period_records(self,
-                           model,
+    @staticmethod
+    def get_period_records(model,
                            start_time,
                            end_time,
                            sort_key='id',
@@ -111,7 +111,7 @@ class Connection(object):
                          order_by(desc(getattr(model, sort_key))).all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err.message)
+                LOG.error("Database exception: %s" % err.message)
                 return []
         else:
             try:
@@ -119,21 +119,21 @@ class Connection(object):
                          order_by(getattr(model, sort_key)).all()
                 return result
             except Exception as err:
-                LOG.error("Database exception: %" % err.message)
+                LOG.error("Database exception: %s" % err.message)
                 return []
 
-    def save(self, model_obj, session=get_session()):
+    @staticmethod
+    def save(model_obj, session=get_session()):
         try:
             model_obj.save(session=session)
         except Exception as e:
-            LOG.warning('Can not save db object: %r' \
-                    %(model_obj.__class__, e.message))
+            LOG.warning('Can not save db object: %s, due to %s'
+                        % (model_obj.__class__, e.message))
 
     @staticmethod
     def save_all(model_objs, session=get_session()):
         try:
             ModelBase.save_all(model_objs, session=session)
         except Exception as e:
-            LOG.warning('Can not save db object: %r at %r' \
-                    %(model_objs[0].__class__, e.message))
-
+            LOG.warning('Can not save db object: %s at %s'
+                        % (model_objs[0].__class__, e.message))
