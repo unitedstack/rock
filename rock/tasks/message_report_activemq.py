@@ -61,7 +61,6 @@ CONF.register_opts(activemq_opts, activemq_group)
 
 
 class ConnectionListener(stomp.ConnectionListener):
-
     def on_error(self, headers, body):
         LOG.error("Can't send message to queue due to: \n%s" % body)
 
