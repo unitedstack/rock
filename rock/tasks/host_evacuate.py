@@ -39,17 +39,17 @@ class HostEvacuate(BaseTask, NovaAction):
         # Force down nova compute of target
         # self.force_down_nova_compute(n_client, host)
 
-        # 1. Check nova compute state of target
+        # Check nova compute state of target
         nova_compute_state = self.check_nova_compute_state(n_client, target)
         if not nova_compute_state or not host_power_off_result:
             return self.get_evacuate_results(
                 n_client, servers_id, target, taskflow_uuid,
                 message_generator=message_generator), False
 
-        # 2. Evacuate servers on the target
+        # Evacuate servers on the target
         self.evacuate_servers(servers)
 
-        # 3. Check evacuate status, while all servers successfully evacuated,
+        # Check evacuate status, while all servers successfully evacuated,
         # it will return, otherwise it will wait check_times * time_delta.
         self.check_evacuate_status(
             n_client,
@@ -185,18 +185,18 @@ class HostEvacuate(BaseTask, NovaAction):
         :param kwargs: some extra arguments for specific generator.
         :return: dict.
         """
-        instance_id = getattr(vm, 'id')
-        instance_name = getattr(vm, 'name')
-        project_id = getattr(vm, 'tenant_id')
-        user_id = getattr(vm, 'user_id')
-        instance_status = getattr(vm, 'status')
-        availability_zone = getattr(vm, 'OS-EXT-AZ:availability_zone')
-        created_at = getattr(vm, 'created')
-        networks = getattr(vm, 'networks')
-        power_state = getattr(vm, 'OS-EXT-STS:power_state')
-        task_state = getattr(vm, 'OS-EXT-STS:task_state')
+        instance_id = getattr(vm, 'id', 'null')
+        instance_name = getattr(vm, 'name', 'null')
+        project_id = getattr(vm, 'tenant_id', 'null')
+        user_id = getattr(vm, 'user_id', 'null')
+        instance_status = getattr(vm, 'status', 'null')
+        availability_zone = getattr(vm, 'OS-EXT-AZ:availability_zone', 'null')
+        created_at = getattr(vm, 'created', 'null')
+        networks = getattr(vm, 'networks', 'null')
+        power_state = getattr(vm, 'OS-EXT-STS:power_state', 'null')
+        task_state = getattr(vm, 'OS-EXT-STS:task_state', 'null')
         origin_host = kwargs.get('origin_host')
-        current_host = getattr(vm, 'OS-EXT-SRV-ATTR:host')
+        current_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', 'null')
         timestamp = datetime.datetime.utcnow().strftime('%m/%d/%Y %H:%M:%S')
 
         if success:

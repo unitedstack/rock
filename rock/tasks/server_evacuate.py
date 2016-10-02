@@ -1,8 +1,5 @@
-from flow_utils import BaseTask
 from actions import NovaAction
-from oslo_log import log as logging
-
-LOG = logging.getLogger(__name__)
+from flow_utils import BaseTask
 
 
 class ServerEvacuate(BaseTask, NovaAction):
@@ -11,7 +8,6 @@ class ServerEvacuate(BaseTask, NovaAction):
         success = False
         n_client = self._get_client()
         try:
-            LOG.info("Resurrecting instance: %s" % server)
             (response, dictionary) = n_client.servers.evacuate(
                 on_shared_storage=on_shared_storage,
                 server=server)
