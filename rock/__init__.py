@@ -13,7 +13,12 @@
 # under the License.
 
 import pbr.version
-
+from rock.db import api as db_api
 
 __version__ = pbr.version.VersionInfo(
     'rock').version_string()
+
+# Initialize rock database backend, because some module in rock implemented db
+# backend themselves, not use rock.db module. But need a database connection
+# configuration. So, as a temporary solution, we initialize rock db
+# backend here to make some option registered in oslo_config.cfg.CONF.

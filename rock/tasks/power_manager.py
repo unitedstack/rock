@@ -8,11 +8,10 @@ LOG = logging.getLogger(__name__)
 
 
 class PowerManager(BaseTask, IPMIAction):
-
     default_provides = "host_power_off_result"
 
     def execute(self, target):
-        
+
         try:
             LOG.info("Trying to power off %s.", target)
             info = IPMIAction(target)

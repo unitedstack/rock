@@ -83,8 +83,8 @@ class Connection(object):
                 return []
         else:
             try:
-                result = query.from_self().\
-                         order_by(getattr(model, sort_key)).all()
+                result = query.from_self(). \
+                    order_by(getattr(model, sort_key)).all()
                 return result
             except Exception as err:
                 LOG.error("Database exception: %s" % err.message)
@@ -98,25 +98,25 @@ class Connection(object):
                            sort_dir='desc'):
 
         if hasattr(end_time, '__call__'):
-                _end_time = end_time()
+            _end_time = end_time()
         else:
-                _end_time = end_time
+            _end_time = end_time
 
         query = model_query(model)
         query = query.filter(model.created_at >= start_time,
                              model.created_at <= _end_time)
         if sort_dir == 'desc':
             try:
-                result = query.from_self().\
-                         order_by(desc(getattr(model, sort_key))).all()
+                result = query.from_self(). \
+                    order_by(desc(getattr(model, sort_key))).all()
                 return result
             except Exception as err:
                 LOG.error("Database exception: %s" % err.message)
                 return []
         else:
             try:
-                result = query.from_self().\
-                         order_by(getattr(model, sort_key)).all()
+                result = query.from_self(). \
+                    order_by(getattr(model, sort_key)).all()
                 return result
             except Exception as err:
                 LOG.error("Database exception: %s" % err.message)

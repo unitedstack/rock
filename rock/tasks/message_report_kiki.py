@@ -21,23 +21,7 @@ from oslo_log import log
 import requests
 
 LOG = log.getLogger(__name__)
-
-kiki_opt_group = cfg.OptGroup('kiki')
-kiki_opts = [
-    cfg.StrOpt(
-        'mail_api_endpoint',
-        default='http://10.0.100.41:8200/v1/publish/publish_email'),
-    cfg.ListOpt(
-        'mail_address',
-        default=['hebin@unitedstack.com'])
-]
 CONF = cfg.CONF
-CONF.register_group(kiki_opt_group)
-CONF.register_opts(kiki_opts, kiki_opt_group)
-
-if getattr(CONF, 'message_report_error_allowed') is None:
-    CONF.register_opt(
-        cfg.BoolOpt('message_report_error_allowed = true', default=True))
 
 
 class MessageReportKiki(BaseTask):
@@ -48,7 +32,7 @@ class MessageReportKiki(BaseTask):
         mail_subject = 'Compute host HA operation'
         http_headers = {
             'Content-type': 'application/json',
-            'X-Auth-Token': '8f7374d8e10c4a6eb3d24b23a9e8a68a'
+            'X-Auth-Token': get_token()
         }
 
         for address in mail_address:
@@ -59,7 +43,7 @@ class MessageReportKiki(BaseTask):
             }
             try:
                 requests.post(mail_api_endpoint,
-                              json=data,
+                              data=json.dumps(data),
                               headers=http_headers)
             except Exception as e:
                 if CONF.message_report_error_allowed:
@@ -82,9 +66,17 @@ def get_token():
                         "domain": {
                             "id": CONF.openstack_credential.user_domain_id,
                         },
-                        "password": "dffcb42eb3a0c8795cbea277"
+                        "password": CONF.openstack_credential.password
                     }
                 }
             }
         }
     }
+
+    headers = {'content-type': 'application/json',
+               'accept': 'application/json'}
+
+    resp = requests.post(token_api_endpoint,
+                         data=json.dumps(json_payload),
+                         headers=headers)
+    return resp.headers.get('X-Subject-Token', None)

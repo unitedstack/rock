@@ -25,22 +25,6 @@ from rock.db.sqlalchemy.model_nova_service import ModelNovaService
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
-openstack_credential_group = cfg.OptGroup(
-    'openstack_credential', title='Openstack administrator credential.')
-
-openstack_credential_opts = [
-    cfg.StrOpt('username', default='admin'),
-    cfg.StrOpt('user_domain_name', default='default'),
-    cfg.StrOpt('nova_client_version', default=2.0),
-    cfg.StrOpt('password', default=None),
-    cfg.StrOpt('auth_url', default=None),
-    cfg.StrOpt('project_name', default='admin'),
-    cfg.StrOpt('project_domain_id', default='default')
-]
-
-CONF.register_group(openstack_credential_group)
-CONF.register_opts(openstack_credential_opts, openstack_credential_group)
-
 
 class Novaservicestatus(ExtensionDescriptor):
 
@@ -101,7 +85,7 @@ class Novaservicestatus(ExtensionDescriptor):
             auth_url=CONF.openstack_credential.auth_url,
             username=CONF.openstack_credential.username,
             password=CONF.openstack_credential.password,
-            user_domain_name=CONF.openstack_credential.user_domain_name,
+            user_domain_id=CONF.openstack_credential.user_domain_id,
             project_domain_name=CONF.openstack_credential.project_domain_id,
             project_name=CONF.openstack_credential.project_name)
 

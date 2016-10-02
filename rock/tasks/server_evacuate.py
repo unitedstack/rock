@@ -1,12 +1,11 @@
 from flow_utils import BaseTask
-from actions import NovaAction 
+from actions import NovaAction
 from oslo_log import log as logging
 
 LOG = logging.getLogger(__name__)
 
 
 class ServerEvacuate(BaseTask, NovaAction):
-
     def execute(self, server, on_shared_storage=True):
 
         success = False
@@ -24,7 +23,7 @@ class ServerEvacuate(BaseTask, NovaAction):
                 res_message = response.reason
             else:
                 res_message = response.reason
-        
+
         except Exception as e:
             res_message = "Error while evacuating instance: %s" % e
 

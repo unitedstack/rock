@@ -24,43 +24,9 @@ from flow_utils import BaseTask
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-activemq_group = cfg.OptGroup('activemq')
-activemq_opts = [
-    cfg.StrOpt(
-        'username',
-        default=None,
-        help='the username to connect with'),
-    cfg.StrOpt(
-        'password',
-        default=None,
-        help='the password used to authenticate with'),
-    cfg.StrOpt(
-        'server_ip',
-        default='127.0.0.1',
-        help='the ipaddress of activemq server'),
-    cfg.IntOpt(
-        'server_port',
-        default=61613,
-        help='the port of of activemq server'),
-    cfg.StrOpt(
-        'destination',
-        default='eventQueue',
-        help='the queue or topic name of activemq '
-             'where the message reported to')
-]
-
-message_report_error_allowed_opt = \
-    cfg.BoolOpt('message_report_error_allowed',
-                default=True,
-                help='when failed to report evacuation message,'
-                     ' terminate rock-engine or not.')
-
-CONF.register_opt(message_report_error_allowed_opt)
-CONF.register_group(activemq_group)
-CONF.register_opts(activemq_opts, activemq_group)
-
 
 class ConnectionListener(stomp.ConnectionListener):
+
     def on_error(self, headers, body):
         LOG.error("Can't send message to queue due to: \n%s" % body)
 
@@ -77,15 +43,10 @@ class ConnectionListener(stomp.ConnectionListener):
         LOG.info("Disconnect to activemq server.")
 
 
-class MessageReport(BaseTask):
+class MessageReportActivemq(BaseTask):
     def execute(self, message_body, message_destination=None,
-                message_content_type=None, message_headers=None,
-                message_keyword_headers=None):
+                message_content_type=None, message_headers=None):
 
-        if message_headers is None:
-            message_headers = {}
-        if message_keyword_headers is None:
-            message_keyword_headers = {}
         host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
         if message_destination is None:
             message_destination = '/queue/' + CONF.activemq.destination
@@ -102,8 +63,7 @@ class MessageReport(BaseTask):
                     destination=message_destination,
                     body=message,
                     content_type=message_content_type,
-                    headers=message_headers,
-                    keyword_headers=message_keyword_headers)
+                    headers=message_headers)
             time.sleep(1)
             connection.disconnect()
         except Exception as err:

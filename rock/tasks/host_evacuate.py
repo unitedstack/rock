@@ -28,48 +28,13 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def register_conf(conf):
-    host_mgmt_ping_group = \
-        cfg.OptGroup(name='host_mgmt_ping',
-                     title="Opts about host management IP ping delay")
-    host_mgmt_ping_opts = [
-        cfg.DictOpt(
-            'ip_hostname_map', default={},
-            help="IP addresses map to hostname"),
-    ]
-
-    host_evacuate_group = cfg.OptGroup(
-        name='host_evacuate', title='Opts for host evacuate')
-    host_evacuate_opts = [
-        cfg.IntOpt(
-            'check_times',
-            default=6,
-            help="how many times to check the evacuated server's status"),
-        cfg.IntOpt(
-            'check_interval', default=15, help='check interval')
-    ]
-
-    conf.register_group(host_evacuate_group)
-    conf.register_opts(host_evacuate_opts, host_evacuate_group)
-
-    if getattr(conf, 'host_mgmt_ping', None) is None:
-        conf.register_group(host_mgmt_ping_group)
-        conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
-    else:
-        if getattr(conf.host_mgmt_ping, 'ip_hostname_map', None) is None:
-            conf.register_opts(host_mgmt_ping_opts, host_mgmt_ping_group)
-
-
-register_conf(CONF)
-
-
 class HostEvacuate(BaseTask, NovaAction):
-
     default_provides = ('message_body', 'host_evacuate_result')
 
     def execute(self, target, taskflow_uuid, host_power_off_result):
         n_client = self._get_client()
         servers, servers_id = self.get_servers(n_client, target)
+        message_generator = 'message_generator_for_' + CONF.message_report_to
 
         # Force down nova compute of target
         # self.force_down_nova_compute(n_client, host)
@@ -77,8 +42,9 @@ class HostEvacuate(BaseTask, NovaAction):
         # 1. Check nova compute state of target
         nova_compute_state = self.check_nova_compute_state(n_client, target)
         if not nova_compute_state or not host_power_off_result:
-            return self.get_evacuate_results(n_client, servers_id, target,
-                                             taskflow_uuid), False
+            return self.get_evacuate_results(
+                n_client, servers_id, target, taskflow_uuid,
+                message_generator=message_generator), False
 
         # 2. Evacuate servers on the target
         self.evacuate_servers(servers)
@@ -92,8 +58,9 @@ class HostEvacuate(BaseTask, NovaAction):
             check_times=CONF.host_evacuate.check_times,
             time_delta=CONF.host_evacuate.check_interval)
 
-        return self.get_evacuate_results(n_client, servers_id, target,
-                                         taskflow_uuid), True
+        return self.get_evacuate_results(
+            n_client, servers_id, target, taskflow_uuid,
+            message_generator=message_generator), True
 
     @staticmethod
     def get_servers(n_client, host):
@@ -109,7 +76,7 @@ class HostEvacuate(BaseTask, NovaAction):
     @staticmethod
     def evacuate_servers(servers):
         for server in servers:
-            LOG.debug("Request to evacute server: %s" % server.id)
+            LOG.debug("Request to evacuate server: %s" % server.id)
             if hasattr(server, 'id'):
                 response = ServerEvacuate().execute(server.id, True)
                 if response['accepted']:
@@ -171,9 +138,17 @@ class HostEvacuate(BaseTask, NovaAction):
             else:
                 break
 
-    def get_evacuate_results(self, n_client, vms_uuid, vm_origin_host,
-                             taskflow_uuid):
+    def get_evacuate_results(
+            self, n_client, vms_uuid,
+            vm_origin_host, taskflow_uuid,
+            message_generator='message_generator_for_activemq'):
+
         results = []
+        generator = getattr(self, message_generator, None)
+        if generator is None:
+            LOG.error("Invalid message generator: %s" % message_generator)
+            return []
+
         for vm_id in vms_uuid:
             vm = n_client.servers.get(vm_id)
             vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
@@ -182,16 +157,18 @@ class HostEvacuate(BaseTask, NovaAction):
             if (vm_task_state is None) and \
                     (vm_host != unicode(vm_origin_host)):
 
-                results.append(
-                    self.make_vm_evacuate_result(vm, True, taskflow_uuid))
+                results.append(generator(vm, True,
+                                         taskflow_uuid=taskflow_uuid,
+                                         origin_host=vm_origin_host))
 
                 LOG.info("Successfully evacuated server: %s, origin_host: %s"
                          ", current_host: %s" %
                          (vm.id, vm_origin_host, vm_host))
 
             else:
-                results.append(
-                    self.make_vm_evacuate_result(vm, False, taskflow_uuid))
+                results.append(generator(vm, False,
+                                         taskflow_uuid=taskflow_uuid,
+                                         origin_host=vm_origin_host))
 
                 LOG.warning(
                     "Failed evacuate server: %s, origin_host: %s, "
@@ -199,8 +176,58 @@ class HostEvacuate(BaseTask, NovaAction):
                     (vm.id, vm_origin_host, vm_host, vm_task_state))
         return results
 
-    def make_vm_evacuate_result(self, vm, success, taskflow_uuid):
+    @staticmethod
+    def message_generator_for_kiki(vm, success, **kwargs):
+        """Generate message of single instance for kiki.
+
+        :param vm: virtual machine instance.
+        :param success: indicate evacuation status.
+        :param kwargs: some extra arguments for specific generator.
+        :return: dict.
+        """
+        instance_id = getattr(vm, 'id')
+        instance_name = getattr(vm, 'name')
+        project_id = getattr(vm, 'tenant_id')
+        user_id = getattr(vm, 'user_id')
+        instance_status = getattr(vm, 'status')
+        availability_zone = getattr(vm, 'OS-EXT-AZ:availability_zone')
+        created_at = getattr(vm, 'created')
+        networks = getattr(vm, 'networks')
+        power_state = getattr(vm, 'OS-EXT-STS:power_state')
+        task_state = getattr(vm, 'OS-EXT-STS:task_state')
+        origin_host = kwargs.get('origin_host')
+        current_host = getattr(vm, 'OS-EXT-SRV-ATTR:host')
+        timestamp = datetime.datetime.utcnow().strftime('%m/%d/%Y %H:%M:%S')
+
+        if success:
+            evacuation = 'evacuated successfully.'
+        else:
+            evacuation = 'failed to evacuate.'
+
+        summery = 'Instance: ' + instance_name + '(' + instance_id + ') ' + \
+                  evacuation
+        result = {
+            'summary': summery,
+            'timestamp': timestamp,
+            'power_state': power_state,
+            'task_state': task_state,
+            'instance_status': instance_status,
+            'instance_id': instance_id,
+            'instance_name': instance_name,
+            'user_id': user_id,
+            'project_id': project_id,
+            'origin_host': origin_host,
+            'current_host': current_host,
+            'availability_zone': availability_zone,
+            'instance_created_at': created_at,
+            'networks': networks
+        }
+
+        return result
+
+    def message_generator_for_activemq(self, vm, success, **kwargs):
         target = str(getattr(vm, 'OS-EXT-SRV-ATTR:host'))
+        taskflow_uuid = kwargs.get('taskflow_uuid', None)
         severity = '2'
         if success:
             summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
@@ -208,7 +235,7 @@ class HostEvacuate(BaseTask, NovaAction):
         else:
             summary = 'vm ' + str(vm.id) + '|' + self.get_vm_ip(vm) + ' ' + \
                       target + '|' + self.get_target_ip(target) + ' HA FAILED'
-        last_occurrence = datetime.datetime.utcnow().\
+        last_occurrence = datetime.datetime.utcnow(). \
             strftime('%m/%d/%Y %H:%M:%S')
         status = 1
         source_id = 10
@@ -243,7 +270,8 @@ class HostEvacuate(BaseTask, NovaAction):
 
     @staticmethod
     def get_target_ip(target):
-        for ip, hostname in CONF.host_mgmt_ping.ip_hostname_map.items():
-            if target == hostname:
-                return ip
-        return 'none'
+        index = CONF.host_mgmt_ping.compute_hosts.index(target)
+        if len(CONF.host_mgmt_ping.management_network_ip) > index:
+            return CONF.host_mgmt_ping.management_network_ip[index]
+        else:
+            return None

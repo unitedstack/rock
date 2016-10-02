@@ -20,12 +20,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from rock.db.sqlalchemy.model_base import ModelBase
 
-
 Base = declarative_base()
 
 
 class ModelPing(ModelBase, Base):
-
     __tablename__ = 'ping'
 
     management_ip_result = Column(Boolean(), nullable=True)

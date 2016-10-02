@@ -22,33 +22,7 @@ from rock.db import api as db_api
 from rock.db.sqlalchemy.model_ping import ModelPing
 from rock.extension_manager import ExtensionDescriptor
 
-host_mgmt_ping_opts_group = cfg.OptGroup(
-    name='host_mgmt_ping', title="Opts about host management IP ping delay")
-
-host_mgmt_ping_opts = [
-    cfg.ListOpt(
-        'compute_hosts',
-        default=[],
-        help="All compute host name. Note the order of following ip addresses"
-             " must keep consistent to me"),
-    cfg.ListOpt(
-        'management_network_ip',
-        default=[],
-        help="Management ip addresses of compute hosts"),
-    cfg.ListOpt(
-        'tunnel_network_ip',
-        default=[],
-        help="Tunnel network ip of compute hosts"),
-    cfg.ListOpt(
-        'storage_network_ip',
-        default=[],
-        help="Storage network ip of compute hosts")
-]
-
 CONF = cfg.CONF
-CONF.register_group(host_mgmt_ping_opts_group)
-CONF.register_opts(host_mgmt_ping_opts, host_mgmt_ping_opts_group)
-
 DATA_LIST = []
 LOCK = threading.RLock()
 

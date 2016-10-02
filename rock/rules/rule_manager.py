@@ -22,15 +22,7 @@ from oslo_service import loopingcall
 
 from rock.rules.rule_parser import RuleParser
 
-
-opts = [
-    cfg.IntOpt('check_cases_interval',
-               default=300,
-               help="Time interval to check all cases."),
-]
-
 CONF = cfg.CONF
-CONF.register_opts(opts)
 LOG = logging.getLogger(__name__)
 
 

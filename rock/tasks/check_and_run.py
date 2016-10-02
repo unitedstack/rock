@@ -6,8 +6,8 @@ from taskflow.persistence.backends import impl_sqlalchemy
 from oslo_config import cfg
 from taskflow import exceptions as exc
 import sql_exec
-LOG = logging.getLogger(__name__)
 
+LOG = logging.getLogger(__name__)
 
 CONF = dict(connection=cfg.CONF.database.connection)
 
@@ -15,8 +15,8 @@ CONF = dict(connection=cfg.CONF.database.connection)
 def check_and_run():
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
     if sql_exec.flowdetails is None:
-        return 
-    
+        return
+
     if sql_exec.flowdetails[5] != u'SUCCESS':
         book_id = sql_exec.flowdetails[2]
         flow_id = sql_exec.flowdetails[6]

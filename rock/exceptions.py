@@ -46,3 +46,7 @@ class RockException(Exception):
 
 class DuplicatedExtension(RockException):
     message = "Found duplicate extension: %(alias)s"
+
+
+class InvalidService(RockException):
+    message = "Invalid service name : %(service_name)s"

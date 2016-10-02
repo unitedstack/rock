@@ -25,7 +25,6 @@ from oslo_utils import importutils
 
 LOG = logging.getLogger(__name__)
 
-
 CONF = dict(connection=cfg.CONF.database.connection)
 
 
@@ -62,9 +61,9 @@ def run_flow(flow_name, store_spec, tasks):
     """
 
     backend = impl_sqlalchemy.SQLAlchemyBackend(CONF)
-   
+
     book = models.LogBook(flow_name)
-    
+
     with contextlib.closing(backend.get_connection()) as conn:
         conn.save_logbook(book)
     # Now load (but do not run) the flow using the provided initial data.

@@ -5,23 +5,6 @@ import MySQLdb
 from sql_statement import *
 
 CONF = cfg.CONF
-database_group = cfg.OptGroup(
-        'database',
-        title='database parameters')
-
-database_opt = cfg.StrOpt(
-    'connection',
-    help='Database connection string',
-)
-
-if getattr(CONF, 'database', None) is None:
-    CONF.register_group(database_group)
-    CONF.register_opt(database_opt, database_group)
-else:
-    if getattr(CONF.database, 'connection', None) is None:
-        CONF.register_opt(database_opt, CONF.database)
-
-CONF(default_config_files=['/etc/rock/rock.ini'])
 conn_str = CONF.database.connection
 conn_str_dict = conn_str.split('/')[-2]
 user = conn_str_dict.split(':')[0]
