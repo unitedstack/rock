@@ -101,7 +101,7 @@ activemq_opts = [
 kiki_opts = [
     cfg.StrOpt(
         'mail_api_endpoint',
-        default='http://10.0.100.41:8200/v1/publish/publish_email'),
+        default=''),
     cfg.ListOpt(
         'mail_address',
         default=[])
