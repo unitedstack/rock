@@ -66,6 +66,10 @@ openstack_credential_opts = [
 ]
 
 host_evacuate_opts = [
+    cfg.BoolOpt(
+        'on_shared_storage',
+        default=True,
+        help='if instances on shared storage, set it true, else false'),
     cfg.IntOpt(
         'check_times',
         default=6,

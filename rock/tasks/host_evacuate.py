@@ -75,10 +75,13 @@ class HostEvacuate(BaseTask, NovaAction):
 
     @staticmethod
     def evacuate_servers(servers):
+        se = ServerEvacuate()
+        on_shared_storage = CONF.host_evacuate.on_shared_storage
         for server in servers:
             LOG.debug("Request to evacuate server: %s" % server.id)
             if hasattr(server, 'id'):
-                response = ServerEvacuate().execute(server.id, True)
+                response = se.execute(server.id,
+                                      on_shared_storage=on_shared_storage)
                 if response['accepted']:
                     LOG.info("Request to evacuate server: %s accepted" %
                              server.id)
