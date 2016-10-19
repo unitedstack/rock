@@ -127,13 +127,19 @@ class Connection(object):
         try:
             model_obj.save(session=session)
         except Exception as e:
+            session.rollback()
             LOG.warning('Can not save db object: %s, due to %s'
                         % (model_obj.__class__, e.message))
+        finally:
+            session.close()
 
     @staticmethod
     def save_all(model_objs, session=get_session()):
         try:
             ModelBase.save_all(model_objs, session=session)
         except Exception as e:
+            session.rollback()
             LOG.warning('Can not save db object: %s at %s'
                         % (model_objs[0].__class__, e.message))
+        finally:
+            session.close()
