@@ -1,18 +1,21 @@
-#!/bin/bash
+#!/usr/bin/bash
+# This shell script is used to backup rock to rock_history, executed once a day
 
-path='/usr/local/bin'
-today=`date -u  "+%Y-%m-%d %H:%M:%S"`
-tables="$path/tables.txt"
+timestamp=$(date -u "+%Y-%m-%d %H:%M:%S")
+database_connection=$(cat /etc/rock/rock.ini | grep "^ *connection*")
+database_tables=("ping" "nova_service")
 
-#echo "backup today:$today" >> $path/log.txt
-#date >> $path/log.txt
+# Get database connection information
+database_user=$(echo ${database_connection} | awk -F ':' '{print $2}' | awk -F '/' '{print $3}')
+database_pass=$(echo ${database_connection} | awk -F ':' '{print $3}' | awk -F '@' '{print $1}')
+database_host=$(echo ${database_connection} | awk -F '@' '{print $2}' | awk -F '/' '{print $1}')
+database_name=$(echo ${database_connection} | awk -F '/' '{print $NF}' | awk -F '?' '{print $1}')
 
-var=`cat $tables`
-db=rock
-for x in $var
+# Backup rock to rock_history
+for table in ${database_tables[@]}
 do
-    mysql $db -e "insert into ${db}_history.$x select * from $db.$x as t1  where t1.created_at < '$today'" 2>>$path/log.txt \
-    && mysql $db -e "delete from $x where created_at < '$today'" 2>>$path/log.txt
+    mysql -u${database_user} -p${database_pass} -h${database_host} -e \
+        "insert into ${database_name}_history.${table} select * from ${database_name}.${table} as t1 where t1.create < '${timestamp}'" \
+    && mysql -u${database_user} -p${database_pass} -h${database_host} -e \
+        "delete from ${database_name}.${table} where created_at < '${timestamp}'"
 done
-
-
