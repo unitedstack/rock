@@ -15,7 +15,7 @@ database_name=$(echo ${database_connection} | awk -F '/' '{print $NF}' | awk -F 
 for table in ${database_tables[@]}
 do
     mysql -u${database_user} -p${database_pass} -h${database_host} -e \
-        "insert into ${database_name}_history.${table} select * from ${database_name}.${table} as t1 where t1.create < '${timestamp}'" \
+        "insert into ${database_name}_history.${table} select * from ${database_name}.${table} as t1 where t1.created_at < '${timestamp}'" \
     && mysql -u${database_user} -p${database_pass} -h${database_host} -e \
         "delete from ${database_name}.${table} where created_at < '${timestamp}'"
 done
