@@ -139,7 +139,7 @@ class Connection(object):
             ModelBase.save_all(model_objs, session=session)
         except Exception as e:
             session.rollback()
-            LOG.warning('Can not save db object: %s at %s'
+            LOG.warning('Can not save db object: %s due to %s'
                         % (model_objs[0].__class__, e.message))
         finally:
             session.close()
