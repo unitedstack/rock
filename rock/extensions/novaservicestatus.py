@@ -52,7 +52,7 @@ class Novaservicestatus(ExtensionDescriptor):
             LOG.error("NovaClientException:")
             LOG.error(*err.args)
             LOG.error(err.message)
-            return None
+            return
         data = {}
         for service in services:
             if service.binary == u'nova-compute':
