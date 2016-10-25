@@ -1,6 +1,5 @@
 [Unit]
 Description=rock-engine daemon
-Wants=rock-mon
 
 [Service]
 Type=simple
