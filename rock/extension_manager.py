@@ -154,6 +154,8 @@ class ExtensionManager(object):
         none_thread_extensions = [i for i in self.extensions
                                   if i not in thread_name]
         if len(none_thread_extensions) > 0:
+            LOG.info("Recreate threads for extension(s): %s"
+                     % none_thread_extensions)
             for ext in none_thread_extensions:
                 task = getattr(self.extensions[ext], 'periodic_task')
                 task_name = ext
