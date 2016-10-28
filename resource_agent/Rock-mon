@@ -1,0 +1,203 @@
+#!/bin/bash
+#
+#	Rock agent for managing rock monitor resources.
+#
+
+############################################################################
+# Initialization:
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
+
+############################################################################
+
+meta_data(){
+	cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="Rock-mon" version="1.0">
+  <version>1.0</version>
+
+  <longdesc lang="en">
+  	Facility for making a reliable rock monitor cluster.
+  </longdesc>
+
+  <shortdesc lang="en">Rock monitor OCF agent</shortdesc>
+
+  <parameters></parameters>
+
+  <actions>
+    <action name="start"        timeout="20" />
+    <action name="stop"         timeout="20" />
+    <action name="monitor"      timeout="20" interval="10" depth="0" />
+    <action name="validate-all"   timeout="20" />
+  </actions>
+</resource-agent>
+END
+
+exit $OCF_SUCCESS
+}
+
+rock_mon_usage(){
+	cat <<END
+usage: $0 {start|stop|monitor|validate-all|meta-data}
+
+$0 manages an UnitedStack Rock monitor process as an HA resource
+END
+}
+
+rock_mon_validate(){
+	local rc
+
+	[ ! -f '/usr/local/bin/backup.sh' ] && return $OCF_ERR_INSTALLED
+	[ ! -f '/usr/local/bin/clear.sh' ] && return $OCF_ERR_INSTALLED
+	[ ! -f '/usr/local/bin/kill_mon.sh' ] && return $OCF_ERR_INSTALLED
+	[ ! -f '/usr/bin/rock-mon' ] && return $OCF_ERR_INSTALLED
+	if [[ ! -f '/etc/rock/rock.ini' ]]; then
+		if ! ocf_is_probe; then
+			ocf_log err "Config /etc/rock/rock.ini doesn't exist"
+			return $OCF_ERR_INSTALLED
+		fi
+		ocf_log warn "Config /etc/rock/rock.ini not available during a probe"
+	fi
+
+	return $OCF_SUCCESS
+}
+
+rock_mon_monitor(){
+	local rc
+	rock_mon_process=$(ps -ef | grep '/bin/rock-mon' | grep -v 'grep')
+	if [[  ! -n $rock_mon_process ]]; then
+		ocf_log info "Rock monitor is not running"
+		return $OCF_NOT_RUNNING
+	else
+		rock_mon_pid=$(echo $rock_mon_process | awk '{print $2}')
+		ocf_run -warn kill -s 0 $rock_mon_pid
+		rc=$?
+		if [[ $rc -eq 0 ]];then
+			ocf_log info "Rock monitor is running"
+			return $OCF_SUCCESS
+		else
+			ocf_log info "Rock monitor is not running"
+			return $OCF_NOT_RUNNING
+		fi
+	fi
+}
+
+rock_mon_start(){
+	local rc
+
+	rock_mon_validate
+
+	rc=$?
+	if [[ $rc -eq $OCF_ERR_INSTALLED ]]; then
+		ocf_log warn "Rock monitor is not properly installed"
+		exit $OCF_ERR_INSTALLED
+	fi
+
+	ocf_run chmod +x /usr/local/bin/backup.sh
+	ocf_run chmod +x /usr/local/bin/clear.sh
+	ocf_run chmod +x /usr/local/bin/kill_mon.sh
+
+	rock_mon_monitor
+
+	rc=$?
+	if [[ $rc -eq $OCF_SUCCESS ]]; then
+		ocf_log info "Rock monitor service already running"
+		return $OCF_SUCCESS
+	fi
+
+	start_interval=5
+	count=0
+	while [ $count -lt 5 ]; do
+	    ocf_run systemctl start rock-mon
+		rock_mon_monitor
+		rc=$?
+		[ $rc -eq $OCF_SUCCESS ] && break
+		count=$(expr $count + 1)
+		sleep 5
+		ocf_log debug "Rock monitor is starting, please wait..."
+	done
+
+	rock_mon_monitor
+	rc=$?
+	if [[ $rc -ne $OCF_SUCCESS ]]; then
+		ocf_log info "Rock monitor started failed"
+		return $OCF_NOT_RUNNING
+	fi
+
+	ocf_log info "Rock monitor service started"
+	return $OCF_SUCCESS
+}
+
+rock_mon_stop(){
+	local rc
+	local pid
+
+	rock_mon_validate
+
+	ocf_run chmod -x /usr/local/bin/backup.sh
+	ocf_run chmod -x /usr/local/bin/clear.sh
+
+	rock_mon_monitor
+	rc=$?
+	if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
+		ocf_log info "Rock monitor service is already stopped"
+		return $OCF_SUCCESS
+	fi
+
+	rock_monitor_pid=$(ps -ef | grep '/bin/rock-mon' | grep -v 'grep' | awk '{print $2}')
+
+	stop_interval=5
+	count=0
+	while [ $count -lt 5 ]; do
+		ocf_run kill -9 $rock_monitor_pid
+		rc=$?
+		if [[ $rc -ne 0 ]]; then
+			ocf_log err "Rock monitor couldn't be stopped"
+			exit $OCF_ERR_GENERIC
+		fi
+		rock_mon_monitor
+		rc=$?
+		if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
+			ocf_log info "Rock monitor service stopped"
+			return $OCF_SUCCESS
+		fi
+		sleep 5
+	done
+
+	ocf_log err "Rock monitor couldn't be stopped"
+	return $OCF_ERR_GENERIC
+}
+
+case $__OCF_ACTION in
+    start)
+        rock_mon_validate
+        rock_mon_start
+        ;;
+    stop)
+        rock_mon_stop
+        ;;
+    monitor)
+        rock_mon_validate
+        rock_mon_monitor
+        ;;
+    meta-data)
+        meta_data
+        exit $OCF_SUCCESS
+        ;;
+    usage|help)
+        rock_mon_usage
+        exit $OCF_SUCCESS
+        ;;
+    validate-all)
+        exit $OCF_SUCCESS
+        ;;
+    *)
+        rock_mon_usage
+        exit $OCF_ERR_UNIMPLEMENTED
+        ;;
+esac
+rc=$?
+ocf_log debug "${OCF_RESOURCE_INSTANCE} $__OCF_ACTION : $rc"
+exit $rc

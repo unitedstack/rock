@@ -1,0 +1,195 @@
+#!/bin/bash
+#
+#	Rock agent for managing rock engine resources.
+#
+
+############################################################################
+# Initialization:
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
+
+############################################################################
+
+meta_data(){
+	cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="Rock-engine" version="1.0">
+  <version>1.0</version>
+
+  <longdesc lang="en">
+  	Facility for making a reliable rock engine cluster.
+  </longdesc>
+
+  <shortdesc lang="en">Rock engine OCF agent</shortdesc>
+
+  <parameters></parameters>
+
+  <actions>
+    <action name="start"        timeout="20" />
+    <action name="stop"         timeout="20" />
+    <action name="monitor"      timeout="20"
+                                interval="10" depth="0" />
+    <action name="validate-all"   timeout="20" />
+  </actions>
+</resource-agent>
+END
+
+exit $OCF_SUCCESS
+}
+
+rock_engine_usage(){
+	cat <<END
+usage: $0 {start|stop|monitor|validate-all|meta-data}
+
+$0 manages an UnitedStack Rock engine process as an HA resource
+END
+}
+
+rock_engine_validate(){
+	local rc
+
+	[ ! -f '/usr/local/bin/kill_engine.sh' ] && return $OCF_ERR_INSTALLED
+	[ ! -f '/usr/bin/rock-engine' ] && return $OCF_ERR_INSTALLED
+
+	if [[ ! -f '/etc/rock/rock.ini' ]]; then
+		if ! ocf_is_probe; then
+			ocf_log err "Config /etc/rock/rock.ini doesn't exist"
+			return $OCF_ERR_INSTALLED
+		fi
+		ocf_log warn "Config /etc/rock/rock.ini not available during a probe"
+	fi
+
+    return $OCF_SUCCESS
+}
+
+rock_engine_monitor(){
+	local rc
+	rock_engine_process=$(ps -ef | grep '/bin/rock-engine' | grep -v 'grep')
+	if [[  ! -n $rock_engine_process ]]; then
+		ocf_log info "Rock engine is not running"
+		return $OCF_NOT_RUNNING
+	else
+		rock_engine_pid=$(echo $rock_engine_process | awk '{print $2}')
+		ocf_run -warn kill -s 0 $rock_engine_pid
+		rc=$?
+		if [[ $rc -eq 0 ]];then
+			ocf_log info "Rock engine is running"
+			return $OCF_SUCCESS
+		else
+			ocf_log info "Rock engine is not running"
+			return $OCF_NOT_RUNNING
+		fi
+	fi
+}
+
+rock_engine_start(){
+	local rc
+
+	rock_engine_validate
+
+	rc=$?
+	if [[ $rc -eq $OCF_ERR_INSTALLED ]]; then
+		ocf_log warn "Rock engine is not properly installed"
+		exit $OCF_ERR_INSTALLED
+	fi
+
+	ocf_run chmod +x /usr/local/bin/kill_engine.sh
+
+	rock_engine_monitor
+
+	rc=$?
+	if [[ $rc -eq $OCF_SUCCESS ]]; then
+		ocf_log info "Rock engine service is already running"
+		return $OCF_SUCCESS
+	fi
+
+	start_interval=5
+	count=0
+	while [ $count -lt 5 ]; do
+	    ocf_run systemctl start rock-engine
+		rock_engine_monitor
+		rc=$?
+		[ $rc -eq $OCF_SUCCESS ] && break
+		count=$(expr $count + 1)
+		sleep $start_interval
+		ocf_log debug "Rock engine is starting, please wait..."
+	done
+
+	rock_engine_monitor
+	rc=$?
+	if [[ $rc -ne $OCF_SUCCESS ]]; then
+		ocf_log info "Rock engine started failed"
+		return $OCF_NOT_RUNNING
+	fi
+
+	ocf_log info "Rock engine service started"
+	return $OCF_SUCCESS
+}
+
+rock_engine_stop(){
+	local rc
+	local pid
+
+	rock_engine_validate
+	rock_engine_monitor
+    rc=$?
+	if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
+		ocf_log info "Rock engine service is already stopped"
+		return $OCF_SUCCESS
+	fi
+
+	stop_interval=5
+	count=0
+	while [ $count -lt 5 ]; do
+		ocf_run systemctl stop rock-engine
+		rc=$?
+		if [[ $rc -ne 0 ]]; then
+			ocf_log err "Rock engine couldn't be stopped"
+			exit $OCF_ERR_GENERIC
+		fi
+		rock_engine_monitor
+		rc=$?
+		if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
+			ocf_log info "Rock engine service stopped"
+			return $OCF_SUCCESS
+		fi
+		sleep $stop_interval
+	done
+
+	ocf_log err "Rock engine couldn't be stopped"
+	return $OCF_ERR_GENERIC
+}
+
+case $__OCF_ACTION in
+    start)
+        rock_engine_validate
+        rock_engine_start
+        ;;
+    stop)
+        rock_engine_stop
+        ;;
+    monitor)
+        rock_engine_validate
+        rock_engine_monitor
+        ;;
+    meta-data)
+        meta_data
+        exit $OCF_SUCCESS
+        ;;
+    usage|help)
+        rock_engine_usage
+        exit $OCF_SUCCESS
+        ;;
+    validate-all)
+        exit $OCF_SUCCESS
+        ;;
+    *)
+        rock_engine_usage
+        exit $OCF_ERR_UNIMPLEMENTED
+        ;;
+esac
+rc=$?
+ocf_log debug "${OCF_RESOURCE_INSTANCE} $__OCF_ACTION : $rc"
+exit $rc
