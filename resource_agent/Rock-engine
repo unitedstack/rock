@@ -36,7 +36,8 @@ meta_data(){
 </resource-agent>
 END
 
-exit $OCF_SUCCESS
+return $OCF_SUCCESS
+
 }
 
 rock_engine_usage(){
@@ -45,6 +46,9 @@ usage: $0 {start|stop|monitor|validate-all|meta-data}
 
 $0 manages an UnitedStack Rock engine process as an HA resource
 END
+
+return $OCF_SUCCESS
+
 }
 
 rock_engine_validate(){
@@ -130,9 +134,7 @@ rock_engine_start(){
 
 rock_engine_stop(){
 	local rc
-	local pid
 
-	rock_engine_validate
 	rock_engine_monitor
     rc=$?
 	if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
@@ -155,6 +157,7 @@ rock_engine_stop(){
 			ocf_log info "Rock engine service stopped"
 			return $OCF_SUCCESS
 		fi
+		count=$(expr $count + 1)
 		sleep $stop_interval
 	done
 

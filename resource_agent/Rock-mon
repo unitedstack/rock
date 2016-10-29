@@ -35,7 +35,8 @@ meta_data(){
 </resource-agent>
 END
 
-exit $OCF_SUCCESS
+return $OCF_SUCCESS
+
 }
 
 rock_mon_usage(){
@@ -44,6 +45,9 @@ usage: $0 {start|stop|monitor|validate-all|meta-data}
 
 $0 manages an UnitedStack Rock monitor process as an HA resource
 END
+
+return $OCF_SUCCESS
+
 }
 
 rock_mon_validate(){
@@ -88,16 +92,11 @@ rock_mon_start(){
 	local rc
 
 	rock_mon_validate
-
 	rc=$?
 	if [[ $rc -eq $OCF_ERR_INSTALLED ]]; then
 		ocf_log warn "Rock monitor is not properly installed"
 		exit $OCF_ERR_INSTALLED
 	fi
-
-	ocf_run chmod +x /usr/local/bin/backup.sh
-	ocf_run chmod +x /usr/local/bin/clear.sh
-	ocf_run chmod +x /usr/local/bin/kill_mon.sh
 
 	rock_mon_monitor
 
@@ -115,7 +114,7 @@ rock_mon_start(){
 		rc=$?
 		[ $rc -eq $OCF_SUCCESS ] && break
 		count=$(expr $count + 1)
-		sleep 5
+		sleep $start_interval
 		ocf_log debug "Rock monitor is starting, please wait..."
 	done
 
@@ -123,35 +122,32 @@ rock_mon_start(){
 	rc=$?
 	if [[ $rc -ne $OCF_SUCCESS ]]; then
 		ocf_log info "Rock monitor started failed"
-		return $OCF_NOT_RUNNING
+		return $rc
 	fi
 
 	ocf_log info "Rock monitor service started"
+	ocf_run chmod +x /usr/local/bin/backup.sh
+	ocf_run chmod +x /usr/local/bin/clear.sh
+	ocf_run chmod +x /usr/local/bin/kill_mon.sh
 	return $OCF_SUCCESS
 }
 
 rock_mon_stop(){
 	local rc
-	local pid
-
-	rock_mon_validate
-
-	ocf_run chmod -x /usr/local/bin/backup.sh
-	ocf_run chmod -x /usr/local/bin/clear.sh
 
 	rock_mon_monitor
 	rc=$?
 	if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
 		ocf_log info "Rock monitor service is already stopped"
+	    ocf_run chmod -x /usr/local/bin/backup.sh
+	    ocf_run chmod -x /usr/local/bin/clear.sh
 		return $OCF_SUCCESS
 	fi
-
-	rock_monitor_pid=$(ps -ef | grep '/bin/rock-mon' | grep -v 'grep' | awk '{print $2}')
 
 	stop_interval=5
 	count=0
 	while [ $count -lt 5 ]; do
-		ocf_run kill -9 $rock_monitor_pid
+		ocf_run systemctl stop rock-mon
 		rc=$?
 		if [[ $rc -ne 0 ]]; then
 			ocf_log err "Rock monitor couldn't be stopped"
@@ -161,9 +157,12 @@ rock_mon_stop(){
 		rc=$?
 		if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
 			ocf_log info "Rock monitor service stopped"
+	        ocf_run chmod -x /usr/local/bin/backup.sh
+	        ocf_run chmod -x /usr/local/bin/clear.sh
 			return $OCF_SUCCESS
 		fi
-		sleep 5
+		count=$(expr $count + 1)
+		sleep $stop_interval
 	done
 
 	ocf_log err "Rock monitor couldn't be stopped"
