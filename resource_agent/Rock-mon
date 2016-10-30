@@ -134,7 +134,6 @@ rock_mon_start(){
 
 rock_mon_stop(){
 	local rc
-	local pid
 
 	rock_mon_monitor
 	rc=$?
@@ -145,12 +144,11 @@ rock_mon_stop(){
 		return $OCF_SUCCESS
 	fi
 
-    pid=$(ps -ef | grep '/bin/rock-mon' | grep -v 'grep' | awk '{print $2}')
 	stop_interval=5
 	count=0
 	while [ $count -lt 5 ]; do
-	    ocf_log info "Trying to stop rock-mon service..."
-		ocf_run kill -9 $pid
+	    	ocf_log info "Trying to stop rock-mon service..."
+		ocf_run killall rock-mon
 		rc=$?
 		if [[ $rc -ne 0 ]]; then
 			ocf_log err "Rock monitor couldn't be stopped"
