@@ -27,10 +27,10 @@ meta_data(){
   <parameters></parameters>
 
   <actions>
-    <action name="start"        timeout="20" />
-    <action name="stop"         timeout="20" />
-    <action name="monitor"      timeout="20" interval="10" depth="0" />
-    <action name="validate-all"   timeout="20" />
+    <action name="start"            timeout="10" />
+    <action name="stop"             timeout="20" />
+    <action name="monitor"          timeout="10" interval="30" depth="0" />
+    <action name="validate-all"     timeout="10" />
   </actions>
 </resource-agent>
 END
@@ -134,6 +134,7 @@ rock_mon_start(){
 
 rock_mon_stop(){
 	local rc
+	local pid
 
 	rock_mon_monitor
 	rc=$?
@@ -144,16 +145,18 @@ rock_mon_stop(){
 		return $OCF_SUCCESS
 	fi
 
-	stop_interval=5
+	stop_interval=3
 	count=0
 	while [ $count -lt 5 ]; do
-	    	ocf_log info "Trying to stop rock-mon service..."
-		ocf_run killall rock-mon
+	    ocf_log info "Trying to stop rock-mon service..."
+        pid=$(ps -ef | grep '/bin/rock-mon' | grep -v 'grep' | awk '{print $2}')
+        ocf_run kill -9 $pid
 		rc=$?
 		if [[ $rc -ne 0 ]]; then
 			ocf_log err "Rock monitor couldn't be stopped"
 			exit $OCF_ERR_GENERIC
 		fi
+		sleep $stop_interval
 		rock_mon_monitor
 		rc=$?
 		if [[ $rc -eq $OCF_NOT_RUNNING ]]; then
@@ -163,8 +166,21 @@ rock_mon_stop(){
 			return $OCF_SUCCESS
 		fi
 		count=$(expr $count + 1)
-		sleep $stop_interval
 	done
+
+	# Trying to stop rock-mon using 'killall'
+    ocf_log warn "Can't stop rock-mon using 'kill -9 pid'"
+    ocf_log info "Trying to stop rock-mon using 'killall rock-mon'..."
+    ocf_run killall rock-mon
+    sleep 0.5
+    rock_mon_monitor
+    rc=$?
+    if [[ $rc -eq $OCF_SUCCESS ]]; then
+        ocf_log info "Rock monitor service stopped"
+	    ocf_run chmod -x /usr/local/bin/backup.sh
+	    ocf_run chmod -x /usr/local/bin/clear.sh
+	    return $OCF_SUCCESS
+    fi
 
 	ocf_log err "Rock monitor couldn't be stopped"
 	return $OCF_ERR_GENERIC
