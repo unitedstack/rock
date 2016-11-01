@@ -147,15 +147,15 @@ class ExtensionManager(object):
         for thread in current_thread_list:
             if thread.name in self.extensions:
                 thread_name.append(thread.name)
-        LOG.info("Current plugin threads: %s" % thread_name)
+        LOG.info("Current plugin threads: " + " ".join(thread_name))
 
         # If some extensions threads exit unexpectedly, create a new thread
         # for it
         none_thread_extensions = [i for i in self.extensions
                                   if i not in thread_name]
         if len(none_thread_extensions) > 0:
-            LOG.info("Recreate threads for extension(s): %s"
-                     % none_thread_extensions)
+            LOG.info("Recreating thread(s) for extension(s): " + " ".join(
+                none_thread_extensions))
             for ext in none_thread_extensions:
                 task = getattr(self.extensions[ext], 'periodic_task')
                 task_name = ext
