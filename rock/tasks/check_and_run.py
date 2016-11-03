@@ -40,5 +40,6 @@ def check_and_run():
                                                     engine='serial')
 
     with flow_utils.DynamicLogListener(flow_engine, logger=LOG):
+        LOG.info("Starting to run previously unfinished task flow")
         flow_engine.run()
         LOG.info("The previously partially completed flow is finished.")

@@ -1,12 +1,14 @@
 import json
-import os
+import commands
 
 from keystoneauth1 import identity
 from keystoneauth1 import session
 from novaclient import client
 from oslo_config import cfg
+from oslo_log import log as logging
 
 CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 
 
 class NovaAction(object):
@@ -42,16 +44,34 @@ class IPMIAction(object):
         cmd = 'ipmitool -I lanplus -H ' + str(self._ip) + ' -U ' \
               + str(self._username) + ' -P ' + str(
             self._password) + ' chassis power on'
-        os.system(cmd)
+        try:
+            status_code, output = commands.getstatusoutput(cmd)
+        except Exception as e:
+            LOG.warning(
+                "Can not power on %s due to %s" % (self._ip, e.message))
+            return 1
+        return status_code
 
     def power_off(self):
         cmd = 'ipmitool -I lanplus -H ' + str(self._ip) + ' -U ' \
               + str(self._username) + ' -P ' + str(
             self._password) + ' chassis power off'
-        os.system(cmd)
+        try:
+            status_code, output = commands.getstatusoutput(cmd)
+        except Exception as e:
+            LOG.warning(
+                "Can not power off %s due to %s" % (self._ip, e.message))
+            return 1
+        return status_code
 
     def power_status(self):
         cmd = 'ipmitool -I lanplus -H ' + str(self._ip) + ' -U ' \
               + str(self._username) + ' -P ' + str(
             self._password) + ' chassis power status'
-        os.system(cmd)
+        try:
+            status_code, output = commands.getstatusoutput(cmd)
+        except Exception as e:
+            LOG.warning("Can not get power status of %s due to %s" % (
+                self._ip, e.message))
+            return 1
+        return status_code, output

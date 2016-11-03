@@ -14,23 +14,21 @@ class PowerManager(BaseTask, IPMIAction):
 
         try:
             LOG.info("Trying to power off %s.", target)
-            info = IPMIAction(target)
-            info.power_off()
+            ipmi = IPMIAction(target)
+            status_code = ipmi.power_off()
+            if status_code != 0:
+                LOG.warning("Failed to power off host %s" % target)
+                return False
             time.sleep(5)
-            result = info.power_status()
-
-            if result is None:
+            code, output = ipmi.power_status()
+            if code == 0 and output.split(' ')[-1] == 'off':
                 LOG.info("Success to power off host %s" % target)
-                with open('/etc/rock/target.json', 'r+') as f:
-                    data = json.load(f)
-                    if data.get(target, None) is not None:
-                        data.pop(target)
-                """
-                We do not need to write back right now.
-                with open('/etc/rock/target.json','w+') as f:
-                    json.dump(data,f)
-                """
-
-            return True
+                return True
+            else:
+                LOG.warning(
+                    "Failed to power off host %s due to %s" % (target, output))
+                return False
         except Exception as e:
+            LOG.warning(
+                "Failed to power off host %s due to %s" % (target, e.message))
             return False
