@@ -2,7 +2,6 @@ from actions import IPMIAction
 from flow_utils import BaseTask
 from oslo_log import log as logging
 import time
-import json
 
 LOG = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ class PowerManager(BaseTask, IPMIAction):
     def execute(self, target):
 
         try:
-            LOG.info("Trying to power off %s.", target)
+            LOG.info("Trying to power off %s" % target)
             ipmi = IPMIAction(target)
             status_code = ipmi.power_off()
             if status_code != 0:

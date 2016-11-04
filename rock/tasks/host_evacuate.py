@@ -44,10 +44,11 @@ class HostEvacuate(BaseTask, NovaAction):
         if not nova_compute_state or not host_power_off_result:
             if not nova_compute_state:
                 LOG.warning("Failed to perform evacuation of compute host: %s "
-                            "due to nova compute service is still up")
+                            "due to nova compute service is still up" % target)
             if not host_power_off_result:
                 LOG.warning("Failed to perform evacuation of compute host: %s "
-                            "due to can't state power status of this host")
+                            "due to can't state power status of this host"
+                            % target)
             return self.get_evacuate_results(
                 n_client, servers_id, target, taskflow_uuid,
                 message_generator=message_generator), False
