@@ -18,9 +18,10 @@ class PowerManager(BaseTask, IPMIAction):
             if status_code != 0:
                 LOG.warning("Failed to power off host %s" % target)
                 return False
-            time.sleep(5)
+            time.sleep(60)
             code, output = ipmi.power_status()
             if code == 0 and output.split(' ')[-1] == 'off':
+                LOG.info("Power status of %s: %s" % (target, output))
                 LOG.info("Success to power off host %s" % target)
                 return True
             else:
