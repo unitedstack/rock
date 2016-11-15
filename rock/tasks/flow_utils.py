@@ -16,11 +16,15 @@
 import os
 
 from oslo_log import log as logging
+from oslo_config import cfg
+from keystoneauth1 import identity, session
+from novaclient import client
 from taskflow.listeners import base
 from taskflow.listeners import logging as logging_listener
 from taskflow import task
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 def _make_task_name(cls, addons=None):
@@ -79,3 +83,18 @@ class DynamicLogListener(logging_listener.DynamicLoggingListener):
             return (exc_info, exc_details)
         else:
             return super(DynamicLogListener, self)._format_failure(fail)
+
+
+def get_nova_client():
+    auth = identity.Password(
+        username=CONF.openstack_credential.username,
+        password=CONF.openstack_credential.password,
+        project_name=CONF.openstack_credential.project_name,
+        auth_url=CONF.openstack_credential.auth_url,
+        project_domain_id=CONF.openstack_credential.project_domain_id,
+        user_domain_id=CONF.openstack_credential.user_domain_id)
+
+    sess = session.Session(auth=auth, verify=False)
+    nova_client_version = CONF.openstack_credential.nova_client_version
+    n_client = client.Client(nova_client_version, session=sess)
+    return n_client

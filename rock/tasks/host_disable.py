@@ -15,14 +15,12 @@
 
 
 from oslo_log import log as logging
-
-from actions import NovaAction
-from flow_utils import BaseTask
+from rock.tasks import flow_utils
 
 LOG = logging.getLogger(__name__)
 
 
-class HostDisable(BaseTask, NovaAction):
+class HostDisable(flow_utils.BaseTask):
 
     default_provides = "host_disable_result"
 
@@ -30,7 +28,7 @@ class HostDisable(BaseTask, NovaAction):
         if not host_evacuate_result:
             return False
 
-        n_client = self._get_client()
+        n_client = flow_utils.get_nova_client()
 
         response = n_client.services.disable_log_reason(
             host=target,

@@ -18,21 +18,18 @@ import json
 import time
 
 from oslo_config import cfg
-
-from actions import NovaAction
-from flow_utils import BaseTask
 from oslo_log import log as logging
-from server_evacuate import ServerEvacuate
+from rock.tasks import flow_utils
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class HostEvacuate(BaseTask, NovaAction):
+class HostEvacuate(flow_utils.BaseTask):
     default_provides = ('message_body', 'host_evacuate_result')
 
     def execute(self, target, taskflow_uuid, host_power_off_result):
-        n_client = self._get_client()
+        n_client = flow_utils.get_nova_client()
         servers, servers_id, servers_ori_state = self.get_servers(
             n_client, target)
         message_generator = 'message_generator_for_' + CONF.message_report_to
@@ -56,7 +53,7 @@ class HostEvacuate(BaseTask, NovaAction):
             return evacuate_result[0], evacuate_result[2]
 
         # Evacuate servers on the target
-        self.evacuate_servers(servers)
+        self.evacuate_servers(servers, n_client)
 
         # Check evacuate status, while all servers successfully evacuated,
         # it will return, otherwise it will wait check_times * time_delta.
@@ -90,22 +87,24 @@ class HostEvacuate(BaseTask, NovaAction):
         return servers, servers_id, servers_state
 
     @staticmethod
-    def evacuate_servers(servers):
-        se = ServerEvacuate()
+    def evacuate_servers(servers, n_client):
         on_shared_storage = CONF.host_evacuate.on_shared_storage
         for server in servers:
-            LOG.debug("Request to evacuate server: %s" % server.id)
-            if hasattr(server, 'id'):
-                response = se.execute(server.id,
-                                      on_shared_storage=on_shared_storage)
-                if response['accepted']:
-                    LOG.info("Request to evacuate server: %s accepted" %
-                             server.id)
+            try:
+                LOG.debug("Request to evacuate server: %s" % server.id)
+                res = n_client.servers.evacuate(
+                    server=server.id,
+                    on_shared_storage=on_shared_storage)
+                if res[0].status_code == 200:
+                    LOG.info("Request to evacuate server %s accepted"
+                             % server.id)
                 else:
-                    LOG.error("Request to evacuate server: %s failed" %
-                              server.id)
-            else:
-                LOG.error("Could not evacuate instance: %s" % server.to_dict())
+                    LOG.warning("Request to evacuate server %s failed due "
+                                "to %s"
+                                % (server.id, res[0].reason))
+            except Exception as err:
+                LOG.warning("Request to evacuate server %s failed due "
+                            "to %s" % (server.id, err.message))
 
     @staticmethod
     def force_down_nova_compute(n_client, host):
