@@ -61,9 +61,7 @@ class HostEvacuate(BaseTask, NovaAction):
         # Check evacuate status, while all servers successfully evacuated,
         # it will return, otherwise it will wait check_times * time_delta.
         self.check_evacuate_status(
-            n_client,
-            servers_id,
-            target,
+            n_client, servers_id, target,
             check_times=CONF.host_evacuate.check_times,
             time_delta=CONF.host_evacuate.check_interval)
 
@@ -72,7 +70,8 @@ class HostEvacuate(BaseTask, NovaAction):
             message_generator=message_generator)
 
         if not evacuate_result[2]:
-            pass
+            self.reset_state(n_client=n_client, ori_state=servers_ori_state,
+                             current_state=evacuate_result[1])
 
         return evacuate_result[0], evacuate_result[2]
 
@@ -169,9 +168,26 @@ class HostEvacuate(BaseTask, NovaAction):
                 vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
                 vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
                 vm_state = getattr(vm, "OS-EXT-STS:vm_state", None)
-                if vm_host == unicode(vm_origin_host) and \
-                        vm_task_state is None:
-                    failed_uuid_and_state[vm_id] = vm_state
+
+                if (vm_task_state is None) and \
+                        (vm_host != unicode(vm_origin_host)):
+                    LOG.info(
+                        "Successfully evacuated server: %s, origin_host: %s"
+                        ", current_host: %s" %
+                        (vm.id, vm_origin_host, vm_host))
+
+                else:
+                    LOG.warning(
+                        "Failed evacuate server: %s, origin_host: %s, "
+                        "current_host: %s, vm_task_state: %s" %
+                        (vm.id, vm_origin_host, vm_host, vm_task_state))
+
+                    if vm_host == unicode(vm_origin_host) and \
+                            vm_task_state is None:
+                        failed_uuid_and_state[vm_id] = vm_state
+                        LOG.warning("Mark server %s evacuated failed and "
+                                    "should do evacuate again" % vm_id)
+
             if len(failed_uuid_and_state) > 0:
                 return results, failed_uuid_and_state, False
             else:
@@ -182,10 +198,6 @@ class HostEvacuate(BaseTask, NovaAction):
             vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
             vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
             vm_state = getattr(vm, "OS-EXT-STS:vm_state", None)
-
-            if vm_host == unicode(vm_origin_host) and \
-                    vm_task_state is None:
-                failed_uuid_and_state[vm_id] = vm_state
 
             if (vm_task_state is None) and \
                     (vm_host != unicode(vm_origin_host)):
@@ -207,6 +219,13 @@ class HostEvacuate(BaseTask, NovaAction):
                     "Failed evacuate server: %s, origin_host: %s, "
                     "current_host: %s, vm_task_state: %s" %
                     (vm.id, vm_origin_host, vm_host, vm_task_state))
+
+                if vm_host == unicode(vm_origin_host) and \
+                        vm_task_state is None:
+                    failed_uuid_and_state[vm_id] = vm_state
+                    LOG.warning("Mark server %s evacuated failed and "
+                                "should do evacuate again" % vm_id)
+
         if len(failed_uuid_and_state) > 0:
             return results, failed_uuid_and_state, False
         else:
@@ -312,17 +331,25 @@ class HostEvacuate(BaseTask, NovaAction):
         else:
             return None
 
-    def reset_state(self, n_client, ori_state, current_state):
+    @staticmethod
+    def reset_state(n_client, ori_state, current_state):
+        LOG.info("Stating reset state for servers we previously "
+                 "collected which failed perform evacuation")
         for uuid, state in current_state:
             if state != ori_state[uuid]:
                 if ori_state[uuid] == 'active':
                     LOG.info("Reset state of %s from current state: "
-                            "%s to origin state: active" % (uuid, state))
+                             "%s to origin state: active" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'active')
                 elif ori_state[uuid] == 'error':
+                    LOG.info("Reset state of %s from current state: "
+                             "%s to origin state: error" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'error')
                 elif ori_state[uuid] == 'stopped':
+                    LOG.info("The origin state of %s is stopped, but current "
+                             "is %s, we set it to error" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'error')
                 else:
-                    pass
-
+                    LOG.info("The origin state of %s is %s, current is %s, so"
+                             " we do not to reset the state" % (
+                                 uuid, ori_state[uuid], state))
