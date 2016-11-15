@@ -39,9 +39,9 @@ class PingThread(threading.Thread):
         data['target'] = self.host_name
         data['result'] = False
         for ip_name, ip in self.host_ip_map.items():
-            # Send 3 packets one time and each packet timeout is 3000ms,
-            # interval between 3 packets is 0.3s, and the ping process
-            # will only wait for 3s for all
+            # Send total 3 packets to the ip address and the interval between
+            # each packet is 0.3s. And wait for each response of the packet
+            # at most 1s.
             if ip_name == 'm':
                 db_filed_1 = 'management_ip_result'
                 db_filed_2 = 'management_ip_delay'
@@ -51,7 +51,7 @@ class PingThread(threading.Thread):
             else:
                 db_filed_1 = 'storage_ip_result'
                 db_filed_2 = 'storage_ip_delay'
-            cmd = "ping -c 3 -t 4 -W 3 -i 0.3 %s" % ip
+            cmd = "ping -c 3 -W 1 -i 0.3 %s" % ip
             status, output = commands.getstatusoutput(cmd)
             if status == 0:
                 data[db_filed_2] = output.split('\n')[-1].split('/')[-3]
