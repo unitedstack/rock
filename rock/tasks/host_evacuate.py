@@ -32,6 +32,10 @@ class HostEvacuate(flow_utils.BaseTask):
         n_client = flow_utils.get_nova_client()
         servers, servers_id, servers_ori_state = self.get_servers(
             n_client, target)
+        if len(servers) == 0:
+            LOG.info("There is no instance on host %s, no need to evacuate"
+                     % target)
+            return [], True
         message_generator = 'message_generator_for_' + CONF.message_report_to
 
         # Force down nova compute of target
@@ -74,10 +78,15 @@ class HostEvacuate(flow_utils.BaseTask):
 
     @staticmethod
     def get_servers(n_client, host):
-        servers = n_client.servers.list(search_opts={
-            'host': host,
-            'all_tenants': 1
-        })
+        try:
+            servers = n_client.servers.list(search_opts={
+                'host': host,
+                'all_tenants': 1
+            })
+        except Exception as err:
+            LOG.warning("Cant't get servers on host %s due to %s"
+                        % (host, err.message))
+            return [], [], {}
         servers_id = []
         servers_state = {}
         for server in servers:
