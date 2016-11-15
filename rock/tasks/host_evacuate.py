@@ -335,17 +335,17 @@ class HostEvacuate(BaseTask, NovaAction):
     def reset_state(n_client, ori_state, current_state):
         LOG.info("Stating reset state for servers we previously "
                  "collected which failed perform evacuation")
-        for uuid, state in current_state:
+        for uuid, state in current_state.items():
             if state != ori_state[uuid]:
-                if ori_state[uuid] == 'active':
+                if ori_state[uuid] == u'active':
                     LOG.info("Reset state of %s from current state: "
                              "%s to origin state: active" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'active')
-                elif ori_state[uuid] == 'error':
+                elif ori_state[uuid] == u'error':
                     LOG.info("Reset state of %s from current state: "
                              "%s to origin state: error" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'error')
-                elif ori_state[uuid] == 'stopped':
+                elif ori_state[uuid] == u'stopped':
                     LOG.info("The origin state of %s is stopped, but current "
                              "is %s, we set it to error" % (uuid, state))
                     n_client.servers.reset_state(uuid, 'error')
