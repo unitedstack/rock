@@ -51,7 +51,7 @@
         "tasks": [
             ["power_manager"],
             ["host_evacuate"],
-            ["host_disable", "disabled_reason:host_down_disable"],
+            ["host_disable", "disabled_reason:rock_host_down_disable"],
             ["message_report"]
         ]
     }
