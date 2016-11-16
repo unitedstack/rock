@@ -30,11 +30,10 @@ class HostEvacuate(flow_utils.BaseTask):
 
     def execute(self, target, taskflow_uuid, host_power_off_result):
         n_client = flow_utils.get_nova_client()
-        servers, servers_id, servers_ori_state = self.get_servers(
-            n_client, target)
+        servers, servers_id = self.get_servers(n_client, target)
         if len(servers) == 0:
-            LOG.info("There is no instance on host %s, no need to evacuate"
-                     % target)
+            LOG.info("There is no active instance on host %s, "
+                     "no need to evacuate" % target)
             return [], True
         message_generator = 'message_generator_for_' + CONF.message_report_to
 
@@ -71,32 +70,31 @@ class HostEvacuate(flow_utils.BaseTask):
             message_generator=message_generator)
 
         if not evacuate_result[2]:
-            self.reset_state(n_client=n_client, ori_state=servers_ori_state,
-                             current_state=evacuate_result[1])
+            self.reset_state(n_client, evacuate_result[1])
 
         return evacuate_result[0], evacuate_result[2]
 
     @staticmethod
     def get_servers(n_client, host):
+        """"Get all servers on the host which vm_state is active"""
         try:
             servers = n_client.servers.list(search_opts={
                 'host': host,
-                'all_tenants': 1
+                'all_tenants': 1,
+                'status': 'active'
             })
         except Exception as err:
-            LOG.warning("Cant't get servers on host %s due to %s"
+            LOG.warning("Cant't get active servers on host %s due to %s"
                         % (host, err.message))
-            return [], [], {}
+            return [], []
         servers_id = []
-        servers_state = {}
         for server in servers:
             servers_id.append(server.id)
-            servers_state[server.id] = getattr(
-                server, "OS-EXT-STS:vm_state", "active")
-        return servers, servers_id, servers_state
+        return servers, servers_id
 
     @staticmethod
     def evacuate_servers(servers, n_client):
+        """Evacuate servers"""
         on_shared_storage = CONF.host_evacuate.on_shared_storage
         for server in servers:
             try:
@@ -141,11 +139,18 @@ class HostEvacuate(flow_utils.BaseTask):
     @staticmethod
     def check_evacuate_status(n_client, vms_uuid, vm_origin_host,
                               check_times=6, time_delta=15):
-        LOG.info(
-            "Checking evacuate status. Check times: %s, check interval: %ss." %
-            (check_times, time_delta))
+        """Check the evacuate status
+
+        Because this function is only designed for waiting some times to
+        let nova compute service to perform evacuation. So, we only focus
+        on the instance's host and vm_task to judge whether an instance was
+        evacuated successfully. vm_state here is not important!
+        """
+        LOG.info("Checking evacuate status. Check times: %s, check "
+                 "interval: %ss." % (check_times, time_delta))
         continue_flag = True
-        for i in range(check_times):
+        time.sleep(time_delta)
+        for i in range(check_times - 1):
             if continue_flag:
                 for vm_id in vms_uuid:
                     vm = n_client.servers.get(vm_id)
@@ -162,82 +167,80 @@ class HostEvacuate(flow_utils.BaseTask):
             else:
                 break
 
+    @staticmethod
+    def judge(instance, origin_host):
+        """Decide whether evacuated success or not of a single instance
+
+        Here we need decide which instance failed to evacuate precisely.
+        1. If current_host != origin_host and vm_task is None, only this
+           situation we consider it evacuated successfully. (no qa)
+        2. Carefully, if current_host == origin_host but vm_task is not None,
+           the instance may just in progress of evacuation, we mark it
+           evacuated failed. There is some problem: if it is in progress of
+           evacuation, but later it failed, we can't reset is state from
+           'error' to 'active'. How to fixed it??
+        3. If current_host != origin_host but vm_task is not None, we consider
+           it evacuated successfully. (no qa)
+        4. If current_host == origin_host and vm_task is None, we firmly
+           consider it evacuated failed. (no qa)
+        """
+        task = getattr(instance, 'OS-EXT-STS:task_state', None)
+        host = getattr(instance, 'OS-EXT-SRV-ATTR:host', None)
+        state = getattr(instance, 'OS-EXT-STS:vm_state', None)
+        if host != unicode(origin_host):
+            LOG.info("Successfully evacuated server: %s, origin_host: %s"
+                     ", current_host: %s, vm_task: %s, vm_state: %s" %
+                     (instance.id, origin_host, host, task, state))
+            return True, state
+        else:
+            LOG.warning("Failed evacuate server: %s, origin_host: %s, "
+                        "current_host: %s, vm_task: %s, vm_state: %s"
+                        % (instance.id, origin_host, host, task, state))
+            LOG.warning("Mark server %s evacuated failed and "
+                        "should do evacuate again" % instance.id)
+            return False, state
+
     def get_evacuate_results(
             self, n_client, vms_uuid, vm_origin_host, taskflow_uuid,
             message_generator='message_generator_for_activemq'):
+        """Get evacuate results and generate message about it
 
-        results = []
+        Before this method is executed, we have involved check_evacuate_status.
+        We have waited enough time to perform evacuation.
+        """
+
+        messages = []
         failed_uuid_and_state = {}
+
         generator = getattr(self, message_generator, None)
         if generator is None:
             LOG.error("Invalid message generator: %s" % message_generator)
             for vm_id in vms_uuid:
                 vm = n_client.servers.get(vm_id)
-                vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
-                vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
-                vm_state = getattr(vm, "OS-EXT-STS:vm_state", None)
-
-                if (vm_task_state is None) and \
-                        (vm_host != unicode(vm_origin_host)):
-                    LOG.info(
-                        "Successfully evacuated server: %s, origin_host: %s"
-                        ", current_host: %s" %
-                        (vm.id, vm_origin_host, vm_host))
-
-                else:
-                    LOG.warning(
-                        "Failed evacuate server: %s, origin_host: %s, "
-                        "current_host: %s, vm_task_state: %s" %
-                        (vm.id, vm_origin_host, vm_host, vm_task_state))
-
-                    if vm_host == unicode(vm_origin_host) and \
-                            vm_task_state is None:
-                        failed_uuid_and_state[vm_id] = vm_state
-                        LOG.warning("Mark server %s evacuated failed and "
-                                    "should do evacuate again" % vm_id)
-
+                res = self.judge(vm, vm_origin_host)
+                if not res[0]:
+                    failed_uuid_and_state[vm_id] = res[1]
             if len(failed_uuid_and_state) > 0:
-                return results, failed_uuid_and_state, False
+                return messages, failed_uuid_and_state, False
             else:
-                return results, failed_uuid_and_state, True
+                return messages, failed_uuid_and_state, True
 
         for vm_id in vms_uuid:
             vm = n_client.servers.get(vm_id)
-            vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
-            vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
-            vm_state = getattr(vm, "OS-EXT-STS:vm_state", None)
-
-            if (vm_task_state is None) and \
-                    (vm_host != unicode(vm_origin_host)):
-
-                results.append(generator(vm, True,
-                                         taskflow_uuid=taskflow_uuid,
-                                         origin_host=vm_origin_host))
-
-                LOG.info("Successfully evacuated server: %s, origin_host: %s"
-                         ", current_host: %s" %
-                         (vm.id, vm_origin_host, vm_host))
-
+            res = self.judge(vm, vm_origin_host)
+            if res[0]:
+                messages.append(generator(vm, True,
+                                          taskflow_uuid=taskflow_uuid,
+                                          origin_host=vm_origin_host))
             else:
-                results.append(generator(vm, False,
-                                         taskflow_uuid=taskflow_uuid,
-                                         origin_host=vm_origin_host))
-
-                LOG.warning(
-                    "Failed evacuate server: %s, origin_host: %s, "
-                    "current_host: %s, vm_task_state: %s" %
-                    (vm.id, vm_origin_host, vm_host, vm_task_state))
-
-                if vm_host == unicode(vm_origin_host) and \
-                        vm_task_state is None:
-                    failed_uuid_and_state[vm_id] = vm_state
-                    LOG.warning("Mark server %s evacuated failed and "
-                                "should do evacuate again" % vm_id)
-
+                failed_uuid_and_state[vm_id] = res[1]
+                messages.append(generator(vm, False,
+                                          taskflow_uuid=taskflow_uuid,
+                                          origin_host=vm_origin_host))
         if len(failed_uuid_and_state) > 0:
-            return results, failed_uuid_and_state, False
+            return messages, failed_uuid_and_state, False
         else:
-            return results, failed_uuid_and_state, True
+            return messages, failed_uuid_and_state, True
 
     @staticmethod
     def message_generator_for_kiki(vm, success, **kwargs):
@@ -340,24 +343,11 @@ class HostEvacuate(flow_utils.BaseTask):
             return None
 
     @staticmethod
-    def reset_state(n_client, ori_state, current_state):
+    def reset_state(n_client, failed_uuid_and_state):
         LOG.info("Stating reset state for servers we previously "
                  "collected which failed perform evacuation")
-        for uuid, state in current_state.items():
-            if state != ori_state[uuid]:
-                if ori_state[uuid] == u'active':
-                    LOG.info("Reset state of %s from current state: "
-                             "%s to origin state: active" % (uuid, state))
-                    n_client.servers.reset_state(uuid, 'active')
-                elif ori_state[uuid] == u'error':
-                    LOG.info("Reset state of %s from current state: "
-                             "%s to origin state: error" % (uuid, state))
-                    n_client.servers.reset_state(uuid, 'error')
-                elif ori_state[uuid] == u'stopped':
-                    LOG.info("The origin state of %s is stopped, but current "
-                             "is %s, we set it to error" % (uuid, state))
-                    n_client.servers.reset_state(uuid, 'error')
-                else:
-                    LOG.info("The origin state of %s is %s, current is %s, so"
-                             " we do not to reset the state" % (
-                                 uuid, ori_state[uuid], state))
+        for uuid, state in failed_uuid_and_state.items():
+            if state != u'active':
+                LOG.info("Reset state of %s from current state: "
+                         "%s to origin state: active" % (uuid, state))
+                n_client.servers.reset_state(uuid, 'active')

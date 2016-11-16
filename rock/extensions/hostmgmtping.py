@@ -55,7 +55,7 @@ class PingThread(threading.Thread):
             status, output = commands.getstatusoutput(cmd)
             if status == 0:
                 data[db_filed_2] = output.split('\n')[-1].split('/')[-3]
-                if float(data[db_filed_2]) < 3.0:
+                if float(data[db_filed_2]) < 1.0:
                     data[db_filed_1] = True
                     data['result'] = True
                 else:
