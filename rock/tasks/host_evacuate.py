@@ -32,7 +32,7 @@ class HostEvacuate(flow_utils.BaseTask):
         n_client = flow_utils.get_nova_client()
         servers, servers_id = self.get_servers(n_client, target)
         if len(servers) == 0:
-            LOG.info("There is no active instance on host %s, "
+            LOG.info("There is no active instance on host: %s, "
                      "no need to evacuate" % target)
             return [], True
         message_generator = 'message_generator_for_' + CONF.message_report_to
@@ -42,6 +42,7 @@ class HostEvacuate(flow_utils.BaseTask):
 
         # Check nova compute state of target
         nova_compute_state = self.check_nova_compute_state(n_client, target)
+
         if not nova_compute_state or not host_power_off_result:
             if not nova_compute_state:
                 LOG.warning("Failed to perform evacuation of compute host: %s "
@@ -84,7 +85,7 @@ class HostEvacuate(flow_utils.BaseTask):
                 'status': 'active'
             })
         except Exception as err:
-            LOG.warning("Cant't get active servers on host %s due to %s"
+            LOG.warning("Can't get active servers on host %s due to %s"
                         % (host, err.message))
             return [], []
         servers_id = []
@@ -188,6 +189,10 @@ class HostEvacuate(flow_utils.BaseTask):
         host = getattr(instance, 'OS-EXT-SRV-ATTR:host', None)
         state = getattr(instance, 'OS-EXT-STS:vm_state', None)
         if host != unicode(origin_host):
+            # state == active, task == None
+            # state == active, task != None
+            # state == error, task == None ? need additional operations?
+            # state == error, task != None ? need additional operations?
             LOG.info("Successfully evacuated server: %s, origin_host: %s"
                      ", current_host: %s, vm_task: %s, vm_state: %s" %
                      (instance.id, origin_host, host, task, state))
@@ -203,7 +208,7 @@ class HostEvacuate(flow_utils.BaseTask):
     def get_evacuate_results(
             self, n_client, vms_uuid, vm_origin_host, taskflow_uuid,
             message_generator='message_generator_for_activemq'):
-        """Get evacuate results and generate message about it
+        """Get evacuate results and generate messages
 
         Before this method is executed, we have involved check_evacuate_status.
         We have waited enough time to perform evacuation.
