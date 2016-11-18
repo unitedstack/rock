@@ -35,6 +35,8 @@ class HostEvacuate(flow_utils.BaseTask):
             LOG.info("There is no active instance on host: %s, "
                      "no need to evacuate" % target)
             return [], True
+        else:
+            LOG.info("Instance(s) to evacuate: %s" % ' '.join(servers_id))
         message_generator = 'message_generator_for_' + CONF.message_report_to
 
         # Force down nova compute of target
@@ -198,7 +200,7 @@ class HostEvacuate(flow_utils.BaseTask):
                         "current_host: %s, vm_task: %s, vm_state: %s"
                         % (instance.id, origin_host, host, task, state))
             LOG.warning("Mark server %s evacuated failed and "
-                        "should do evacuate again" % instance.id)
+                        "should be evacuated later" % instance.id)
             return False, state
 
     def get_evacuate_results(
