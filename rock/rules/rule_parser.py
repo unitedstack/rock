@@ -95,6 +95,12 @@ class RuleParser(object):
                     self._calculate(judge_rule, funcs)
                 self.target_data[target][key].update(target_data[0])
 
+        target_required_len = len(self.rule["collect_data"])
+        for key, value in self.target_data.items():
+            if len(self.target_data[key]) != target_required_len:
+                self.target_data.pop(key)
+                LOG.warning("Find host %s do not match.", key)
+
     def _rule_mapping_per_target(self):
 
         def _replace_variate(target, rule):
