@@ -144,8 +144,8 @@ class HostEvacuate(flow_utils.BaseTask):
 
         Because this function is only designed for waiting some times to
         let nova compute service to perform evacuation. So, we only focus
-        on the instance's host and vm_task to judge whether an instance was
-        evacuated successfully. vm_state here is not important!
+        on the instance's vm_task to judge whether an instance was evacuated
+        successfully. vm_state and vm_host here is not important!
         """
         LOG.info("Checking evacuate status. Check times: %s, check "
                  "interval: %ss." % (check_times, time_delta))
@@ -156,14 +156,10 @@ class HostEvacuate(flow_utils.BaseTask):
                 for vm_id in vms_uuid:
                     vm = n_client.servers.get(vm_id)
                     vm_task_state = getattr(vm, 'OS-EXT-STS:task_state', None)
-                    vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host', None)
-
-                    if (vm_task_state is not None) or \
-                            (vm_host == unicode(vm_origin_host)):
+                    if vm_task_state is not None:
                         time.sleep(time_delta)
                         continue_flag = True
                         break
-
                     continue_flag = False
             else:
                 break
