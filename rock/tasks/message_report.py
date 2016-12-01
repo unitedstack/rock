@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
 
 import stomp
 from oslo_config import cfg
@@ -24,43 +23,13 @@ from flow_utils import BaseTask
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-activemq_group = cfg.OptGroup('activemq')
-activemq_opts = [
-    cfg.StrOpt(
-        'username',
-        default=None,
-        help='the username to connect with'),
-    cfg.StrOpt(
-        'password',
-        default=None,
-        help='the password used to authenticate with'),
-    cfg.StrOpt(
-        'server_ip',
-        default='127.0.0.1',
-        help='the ipaddress of activemq server'),
-    cfg.IntOpt(
-        'server_port',
-        default=61613,
-        help='the port of of activemq server'),
-    cfg.StrOpt(
-        'destination',
-        default='eventQueue',
-        help='the queue or topic name of activemq '
-             'where the message reported to'
-    )
-]
-
-CONF.register_group(activemq_group)
-CONF.register_opts(activemq_opts, activemq_group)
-
 
 class ConnectionListener(stomp.ConnectionListener):
-
     def on_error(self, headers, body):
-        LOG.error("Can't send message to queue due to: \n%s" % body)
+        LOG.error("Can't send message to queue due to: %s" % body)
 
     def on_send(self, frame):
-        LOG.info("Sending message: %s to activemq server." % frame)
+        LOG.info("Sending message: %s" % frame)
 
     def on_connecting(self, host_and_port):
         LOG.info("Connecting to activemq server: %s" % str(host_and_port))
@@ -73,14 +42,33 @@ class ConnectionListener(stomp.ConnectionListener):
 
 
 class MessageReport(BaseTask):
-    def execute(self, message_body, message_destination=None,
-                message_content_type=None, message_headers={},
-                message_keyword_headers={}, activemq_error_allowed=True):
+    def execute(self, message_body, message_content_type=None,
+                message_headers=None):
+        if CONF.message_report_to == 'activemq':
+            reporter = Activemq(body=message_body,
+                                content_type=message_content_type,
+                                headers=message_headers)
+            reporter.report_message()
+        else:
+            LOG.error(
+                " messaging system: %s is not supported" %
+                CONF.message_report_to)
 
-        host_and_port = [(CONF.activemq.server_ip, CONF.activemq.server_port)]
-        if message_destination is None:
-            message_destination = '/queue/' + CONF.activemq.destination
-        connection = stomp.Connection(host_and_port)
+
+class Activemq(object):
+    def __init__(self, body, content_type=None, headers=None):
+        self.body = body
+        self.content_type = content_type
+        if headers is None:
+            self.headers = {}
+        else:
+            self.headers = headers
+        self.host_and_port = [
+            (CONF.activemq.server_ip, CONF.activemq.server_port)]
+        self.destination = '/queue/' + CONF.activemq.destination
+
+    def report_message(self):
+        connection = stomp.Connection(self.host_and_port)
         connection.set_listener(
             'activemq_connection_listener', ConnectionListener())
         try:
@@ -88,17 +76,15 @@ class MessageReport(BaseTask):
             connection.connect(
                 username=CONF.activemq.username,
                 passcode=CONF.activemq.password, wait=True)
-            for message in message_body:
+            for body in self.body:
                 connection.send(
-                    destination=message_destination,
-                    body=message,
-                    content_type=message_content_type,
-                    headers=message_headers,
-                    keyword_headers=message_keyword_headers)
-            time.sleep(1)
+                    destination=self.destination,
+                    body=body,
+                    content_type=self.content_type,
+                    headers=self.headers)
             connection.disconnect()
         except Exception as err:
-            if activemq_error_allowed:
+            if CONF.message_report_error_allowed:
                 LOG.error("Activemq error: %s" % err.message)
             else:
                 raise err

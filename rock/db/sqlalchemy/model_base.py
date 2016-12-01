@@ -26,7 +26,6 @@ from oslo_utils import timeutils
 
 
 class ModelBase(models.ModelBase):
-
     id = Column(Integer(), primary_key=True)
     created_at = Column(DateTime(),
                         default=lambda: timeutils.utcnow(),

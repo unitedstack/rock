@@ -12,5 +12,5 @@ oslo.db
 taskflow
 keystoneauth1
 python-novaclient
-stomp.py
+stomp.py>=4.1.13
 SQLAlchemy-Utils

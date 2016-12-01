@@ -13,44 +13,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from keystoneauth1 import identity
-from keystoneauth1 import session
-from novaclient import client
-import eventlet
-from eventlet.queue import LightQueue
 from oslo_config import cfg
+from oslo_log import log as logging
 
-from rock import extension_manager
+from keystoneauth1 import identity, session
+from novaclient import client
+from rock.extension_manager import ExtensionDescriptor
 from rock.db import api as db_api
 from rock.db.sqlalchemy.model_nova_service import ModelNovaService
 
-
 CONF = cfg.CONF
-
-openstack_credential_group = cfg.OptGroup(
-        'openstack_credential',
-        title='Openstack administrator credential.')
-
-openstack_credential_opts = [
-        cfg.StrOpt('username', default='admin'),
-        cfg.StrOpt('user_domain_name', default='default'),
-        cfg.StrOpt('nova_client_version', default=2.0),
-        cfg.StrOpt('password', default=None),
-        cfg.StrOpt('auth_url', default=None),
-        cfg.StrOpt('project_name', default='admin'),
-        cfg.StrOpt('project_domain_id', default='default')
-        ]
-
-CONF.register_group(openstack_credential_group)
-CONF.register_opts(openstack_credential_opts, openstack_credential_group)
+LOG = logging.getLogger(__name__)
 
 
-class Novaservicestatus(extension_manager.ExtensionDescriptor):
+class Novaservicestatus(ExtensionDescriptor):
 
     def __init__(self):
         super(Novaservicestatus, self).__init__()
-        self.queue = LightQueue(100)
-        self.pool = eventlet.GreenPool(4)
 
     @classmethod
     def get_name(cls):
@@ -64,44 +43,27 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
     def get_description(cls):
         return "Status of nova compute for a specified host"
 
+    @ExtensionDescriptor.period_decorator(10)
     def periodic_task(self):
-        self.pool.spawn(self.producer)
-        self.pool.spawn(self.consumer)
-
-    def _get_client(self):
-        """Get a nova client"""
-
-        auth=identity.Password(
-            auth_url=CONF.openstack_credential.auth_url,
-            username=CONF.openstack_credential.username,
-            password=CONF.openstack_credential.password,
-            user_domain_name=CONF.openstack_credential.user_domain_name,
-            project_domain_name=CONF.openstack_credential.project_domain_id,
-            project_name=CONF.openstack_credential.project_name
-        )
-
-        sess = session.Session(auth=auth,verify=False)
-        nova_client_version = CONF.openstack_credential.nova_client_version
-        n_client = client.Client(nova_client_version, session=sess)
-        return n_client
-
-    def producer(self):
         n_client = self._get_client()
-        services = n_client.services.list()
-        result = {}
+        try:
+            services = n_client.services.list()
+        except Exception as err:
+            LOG.error("NovaClientException:")
+            LOG.error(*err.args)
+            LOG.error(err.message)
+            return
+        data = {}
         for service in services:
             if service.binary == u'nova-compute':
-                result[service.host] = {
-                        'state': service.state,
-                        'status': service.status,
-                        'disabled_reason': service.disabled_reason
+                data[service.host] = {
+                    'state': service.state,
+                    'status': service.status,
+                    'disabled_reason': service.disabled_reason
                 }
-        self.queue.put(result, block=False, timeout=1)
 
-    def consumer(self):
-        result = self.queue.get(block=False, timeout=1)
         objs = []
-        for k,v in result.items():
+        for k, v in data.items():
             if v['disabled_reason'] is not None:
                 disabled_reason = str(v['disabled_reason'])
             else:
@@ -111,9 +73,23 @@ class Novaservicestatus(extension_manager.ExtensionDescriptor):
                     target=str(k),
                     result=True if v['state'] == u'up' else False,
                     service_state=True if v['state'] == u'up' else False,
-                    service_status=True \
-                            if v['status'] == u'enabled' else False,
-                    disabled_reason=disabled_reason
-                )
-            )
+                    service_status=True
+                    if v['status'] == u'enabled' else False,
+                    disabled_reason=disabled_reason))
         db_api.save_all(objs)
+
+    def _get_client(self):
+        """Get a nova client"""
+
+        auth = identity.Password(
+            auth_url=CONF.openstack_credential.auth_url,
+            username=CONF.openstack_credential.username,
+            password=CONF.openstack_credential.password,
+            user_domain_id=CONF.openstack_credential.user_domain_id,
+            project_domain_name=CONF.openstack_credential.project_domain_id,
+            project_name=CONF.openstack_credential.project_name)
+
+        sess = session.Session(auth=auth, verify=False)
+        nova_client_version = CONF.openstack_credential.nova_client_version
+        n_client = client.Client(nova_client_version, session=sess)
+        return n_client

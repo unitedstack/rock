@@ -15,30 +15,30 @@
 
 
 from oslo_log import log as logging
-
-from actions import NovaAction
-from flow_utils import BaseTask
+from rock.tasks import flow_utils
 
 LOG = logging.getLogger(__name__)
 
 
-class HostDisable(BaseTask, NovaAction):
+class HostDisable(flow_utils.BaseTask):
 
     default_provides = "host_disable_result"
 
     def execute(self, target, disabled_reason, host_evacuate_result):
         if not host_evacuate_result:
+            LOG.warning("Evacuate failed, not disabling host.")
             return False
 
-        n_client = self._get_client()
+        LOG.info("Trying to disable Host %ss.", target)
+        n_client = flow_utils.get_nova_client()
 
         response = n_client.services.disable_log_reason(
             host=target,
             binary='nova-compute',
             reason=disabled_reason
         )
-        LOG.info("Host %s disabled for reason %s.", target, disabled_reason)
 
+        LOG.info("Host %s disabled for reason %s.", target, disabled_reason)
         if response.status == 'disabled':
             LOG.info("Host %s disabled successfully.", target)
             return True

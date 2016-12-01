@@ -1,41 +1,35 @@
-# -*- coding: utf-8 -*-
+# Copyright 2011 OpenStack Foundation.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 from oslo_config import cfg
 import MySQLdb
 from sql_statement import *
 
 CONF = cfg.CONF
-database_group = cfg.OptGroup(
-        'database',
-        title='database infomation.')
+conn_str = CONF.database.connection
+conn_str_dict = conn_str.split('/')[-2]
+db = conn_str.split('/')[-1].split('?')[0]
+user = conn_str_dict.split(':')[0]
+conn_str_dict_1 = conn_str_dict.split(':')[1]
+passwd = conn_str_dict_1.split('@')[0]
+host = conn_str_dict_1.split('@')[1]
 
-database_opts = [
-    cfg.StrOpt('host',
-               default='127.0.0.1'),
-    cfg.StrOpt('user',
-               default='root'),
-    cfg.StrOpt('passwd',
-               default='admin'),
-]
-
-if getattr(CONF, 'database', None) is None:
-    CONF.register_group(database_group)
-    CONF.register_opts(database_opts, database_group)
-
-else:
-    if getattr(CONF.database, 'host', None) is None:
-        CONF.register_opt(cfg.StrOpt('host', default='127.0.0.1'), group=database_group)
-    if getattr(CONF.database, 'user', None) is None:
-        CONF.register_opt(cfg.StrOpt('user', default='root'), group=database_group)
-    if getattr(CONF.database, 'passwd', None) is None:
-        CONF.register_opt(cfg.StrOpt('passwd', default='admin'), group=database_group)
-
-CONF(default_config_files=['/etc/rock/rock.ini'])
-
-conn = MySQLdb.connect(host=CONF.database.host,
-                       user=CONF.database.user,
-                       passwd=CONF.database.passwd,
-                       db='rock',
+conn = MySQLdb.connect(host=host,
+                       user=user,
+                       passwd=passwd,
+                       db=db,
                        charset='utf8')
 cursor = conn.cursor()
 

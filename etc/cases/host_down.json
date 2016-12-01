@@ -2,9 +2,9 @@
     "rule_name": "host_down",
     "collect_data": {
         "service_result": {"data": ["%get_by_time", "nova_service", 300],
-                           "judge": ["%false_end_count_lt", 2]},
+                           "judge": ["%false_end_count_lt", 3]},
         "ping_result": {"data": ["%get_by_time", "ping", 300],
-                        "judge": ["%false_end_count_lt", 6]}
+                        "judge": ["%false_end_count_lt", 8]}
     },
     "l1_rule": [
         "%or",
@@ -31,7 +31,7 @@
                         [
                             "%==",
                             "map.service_result.disabled_reason",
-                            "host_down_disable"
+                            "host_down_disable_by_rock"
                         ]
                     ]
                 ],
@@ -51,7 +51,7 @@
         "tasks": [
             ["power_manager"],
             ["host_evacuate"],
-            ["host_disable", "disabled_reason:host_down_disable"],
+            ["host_disable", "disabled_reason:host_down_disable_by_rock"],
             ["message_report"]
         ]
     }

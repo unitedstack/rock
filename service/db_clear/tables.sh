@@ -1,2 +1,0 @@
-ping
-nova_service

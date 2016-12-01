@@ -20,12 +20,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from rock.db.sqlalchemy.model_base import ModelBase
 
-
 Base = declarative_base()
 
 
 class ModelNovaService(ModelBase, Base):
-
     __tablename__ = 'nova_service'
 
     service_state = Column(Boolean(), nullable=False)

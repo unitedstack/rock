@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+if [ -r '/etc/rock/alembic.ini' ]; then
+    # Get database connection information
+    database_connection=$(cat /etc/rock/alembic.ini | grep "^ *sqlalchemy.url*")
+    database_user=$(echo ${database_connection} | awk -F ':' '{print $2}' | awk -F '/' '{print $3}')
+    database_pass=$(echo ${database_connection} | awk -F ':' '{print $3}' | awk -F '@' '{print $1}')
+    database_host=$(echo ${database_connection} | awk -F '@' '{print $2}' | awk -F '/' '{print $1}')
+    database_name=$(echo ${database_connection} | awk -F '/' '{print $NF}' | awk -F '?' '{print $1}')
+    cp /etc/rock/alembic.ini /tmp/alembic.ini
+    sed -i "s/^ *sqlalchemy.url.*$/sqlalchemy.url = mysql:\/\/${database_user}:${database_pass}@${database_host}\/${database_name}_history?charset=utf8/g" /tmp/alembic.ini
+    alembic -c /tmp/alembic.ini upgrade head
+    rm -f /tmp/alembic.ini
+    exit 0
+fi
