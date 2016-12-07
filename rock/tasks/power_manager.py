@@ -19,7 +19,9 @@ import commands
 
 from flow_utils import BaseTask
 from oslo_log import log as logging
+from oslo_config import cfg
 
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -28,28 +30,36 @@ class PowerManager(BaseTask):
 
     def execute(self, target):
 
-        try:
-            LOG.info("Trying to power off %s" % target)
-            ipmi = IPMIAction(target)
-            status_code = ipmi.power_off()
-            if status_code != 0:
-                LOG.warning("Failed to power off host %s" % target)
-                return False
-            LOG.info("Waiting 30s...")
-            time.sleep(30)
-            code, output = ipmi.power_status()
-            if code == 0 and output.split(' ')[-1] == 'off':
-                LOG.info("Power status of %s: %s" % (target, output))
-                LOG.info("Success to power off host %s" % target)
-                return True
-            else:
+        if CONF.ipmi.use_ipmi:
+            try:
+                LOG.info("Trying to power off %s" % target)
+                ipmi = IPMIAction(target)
+                status_code = ipmi.power_off()
+                if status_code != 0:
+                    LOG.warning("Failed to power off host %s" % target)
+                    return False
+                LOG.info("Waiting 30s...")
+                time.sleep(30)
+                code, output = ipmi.power_status()
+                if code == 0 and output.split(' ')[-1] == 'off':
+                    LOG.info("Power status of %s: %s" % (target, output))
+                    LOG.info("Success to power off host %s" % target)
+                    return True
+                else:
+                    LOG.warning(
+                        "Failed to power off host %s due to %s"
+                        % (target, output))
+                    return False
+            except Exception as e:
                 LOG.warning(
-                    "Failed to power off host %s due to %s" % (target, output))
+                    "Failed to power off host %s due to %s"
+                    % (target, e.message))
                 return False
-        except Exception as e:
-            LOG.warning(
-                "Failed to power off host %s due to %s" % (target, e.message))
-            return False
+        else:
+            LOG.warning("Skipping power off compute host: %s, due to "
+                        "'use_ipmi' option in rock.ini configured as fasle"
+                        % target)
+            return True
 
 
 class IPMIAction(object):

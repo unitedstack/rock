@@ -111,6 +111,14 @@ kiki_opts = [
         default=[])
 ]
 
+ipmi_opts = [
+    cfg.BoolOpt(
+        'use_ipmi',
+        default=True,
+        help='if true, using ipmi to power off failed compute node before'
+             'evacuation, else not to power off')
+]
+
 
 def list_opts():
     """All the options required by rock.
@@ -127,5 +135,6 @@ def list_opts():
         ('openstack_credential', openstack_credential_opts),
         ('host_evacuate', host_evacuate_opts),
         ('activemq', activemq_opts),
-        ('kiki', kiki_opts)
+        ('kiki', kiki_opts),
+        ('ipmi', ipmi_opts)
     ]
