@@ -62,7 +62,8 @@ openstack_credential_opts = [
     cfg.StrOpt('auth_url', default=None),
     cfg.StrOpt('project_name', default='admin'),
     cfg.StrOpt('project_domain_id', default='default'),
-    cfg.StrOpt('password', default=None)
+    cfg.StrOpt('password', default=None),
+    cfg.StrOpt('region_name', default=None)
 ]
 
 host_evacuate_opts = [
