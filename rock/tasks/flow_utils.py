@@ -96,5 +96,6 @@ def get_nova_client():
 
     sess = session.Session(auth=auth, verify=False)
     nova_client_version = CONF.openstack_credential.nova_client_version
-    n_client = client.Client(nova_client_version, session=sess)
+    n_client = client.Client(nova_client_version, session=sess,
+                             region_name=CONF.openstack_credential.region_name)
     return n_client
