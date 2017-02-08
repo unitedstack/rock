@@ -154,13 +154,15 @@ class ExtensionManager(object):
         none_thread_extensions = [i for i in self.extensions
                                   if i not in thread_name]
         if len(none_thread_extensions) > 0:
-            LOG.info("Recreating thread(s) for extension(s): " + " ".join(
+            LOG.warning("Plugin(s) not running: " + " ".join(
                 none_thread_extensions))
-            for ext in none_thread_extensions:
-                task = getattr(self.extensions[ext], 'periodic_task')
-                task_name = ext
-                t = threading.Thread(target=task, name=task_name)
-                t.start()
+            #LOG.info("Recreating thread(s) for extension(s): " + " ".join(
+            #    none_thread_extensions))
+            #for ext in none_thread_extensions:
+            #    task = getattr(self.extensions[ext], 'periodic_task')
+            #    task_name = ext
+            #    t = threading.Thread(target=task, name=task_name)
+            #    t.start()
 
     def start_collect_data(self):
         for extension in self.extensions:
