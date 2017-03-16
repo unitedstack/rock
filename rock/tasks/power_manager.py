@@ -34,15 +34,20 @@ class PowerManager(BaseTask):
             try:
                 LOG.info("Trying to power off %s" % target)
                 ipmi = IPMIAction(target)
-                status_code = ipmi.power_off()
+                status_code, output = ipmi.power_off()
                 if status_code != 0:
-                    LOG.warning("Failed to power off host %s" % target)
-                    return False
-                LOG.info("Waiting 30s...")
-                time.sleep(30)
-                code, output = ipmi.power_status()
-                if code == 0 and output.split(' ')[-1] == 'off':
-                    LOG.info("Power status of %s: %s" % (target, output))
+                    # Some problems could happen when execute 'power off'
+                    # command, But the power of the host could be already off.
+                    # So, we could not return False here.
+                    LOG.warning("Failed to execute ipmi 'power off' command of"
+                                " host: %s, status_code: %s, command_output: "
+                                "%s" % (target, status_code, output))
+                    # return False
+                LOG.info("Waiting 10s...")
+                time.sleep(10)
+                code, out = ipmi.power_status()
+                if code == 0 and out.split(' ')[-1] == 'off':
+                    LOG.info("Power status of %s: %s" % (target, out))
                     LOG.info("Success to power off host %s" % target)
                     return True
                 else:
@@ -79,8 +84,8 @@ class IPMIAction(object):
         except Exception as e:
             LOG.warning(
                 "Can not power on %s due to %s" % (self._ip, e.message))
-            return 1
-        return status_code
+            return 1, e.message
+        return status_code, output
 
     def power_off(self):
         cmd = 'ipmitool -I lanplus -H ' + str(self._ip) + ' -U ' \
@@ -91,8 +96,8 @@ class IPMIAction(object):
         except Exception as e:
             LOG.warning(
                 "Can not power off %s due to %s" % (self._ip, e.message))
-            return 1
-        return status_code
+            return 1, e.message
+        return status_code, output
 
     def power_status(self):
         cmd = 'ipmitool -I lanplus -H ' + str(self._ip) + ' -U ' \
